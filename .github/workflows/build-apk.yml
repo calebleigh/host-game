@@ -25,6 +25,9 @@ jobs:
           java-version: 21
 
       - uses: android-actions/setup-android@v3
+        with:
+          # the old default ("tools") no longer exists, so name what we need
+          packages: platform-tools platforms;android-36
 
       - name: Install Capacitor
         run: npm ci
