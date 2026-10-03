@@ -101,7 +101,11 @@ Phases (`R.phase`): `idle` (no run), `start` (opening card pick), `pick` (place 
   Upgrade costs scale up each world.
 - DNA is collected during a run (kills, cleared worlds, bosses) but **only paid out when the run ends**.
   Spent in Evolve on permanent perks and automation.
-- Cards: at the start of every run and after every cleared world, pick one boon and one curse.
+- Cards: at the start of every run and after every cleared world, pick one boon and one curse. Every card has
+  3 levels (`v: [I, II, III]` totals in `BOONS`/`CURSES`): picking a card you already have raises its level, level I
+  is small and II/III are big. Level = how many times it was picked, capped at 3 (`cardLevel`); cards at III aren't
+  offered again. Owned cards show as icons with Roman numerals in a column down the left of the arena (`renderCardCol`,
+  icons in `CARD_ICONS`), boons first, then curses; tap or hover for what they do.
 
 Current tuning constants (top of the script): `worldHp = 180 * 2.6^(w-1)`, `CURE_BASE 120`, `CURE_SHRINK 1.05`,
 `COST_GROWTH 2.4`, `DNA_GROWTH 1.45`, `YIELD 0.3`, cleanse `0.05 * 1.25^(w-1)`, alert push ramps from 1x in
@@ -149,10 +153,11 @@ world 1 to 3x by world 10. Change one knob at a time and re-run `tools/sim.py`.
 - Very thin phones (280 to 360px): the zone path stays on one line, titles shrink slightly.
 - Safe areas: backgrounds run edge to edge; content is padded with `--sat/--sab/--sal/--sar`, which take the
   larger of `env(safe-area-inset-*)` and the `--safe-area-inset-*` variables Capacitor injects on Android.
-- Popups (Settings, Codex, How to play, Evolve, Strain) are sheets with a fixed header and footer and a
+- Popups (Settings, Codex, How to play, Evolve) are sheets with a fixed header and footer and a
   scrolling middle; they must fit short screens (test at 412x560).
-- The run footer is Strain and Evolve in a centered tab bar (pink dot on Evolve when something is affordable) and a Settings cog on the right.
-  Main menu is reached from the top of Settings or with Esc.
+- There is no run footer. Settings is a cog at the top left of the arena (before the level name); the main
+  menu is reached from the top of Settings or with Esc, and has Abandon run (two taps). DNA is spent only between
+  runs: Spend DNA on the run summary, or Evolve on the main menu.
 
 ## Gotchas
 

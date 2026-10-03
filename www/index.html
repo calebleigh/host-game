@@ -157,7 +157,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   background: color-mix(in srgb, var(--slide) 70%, transparent);
 }
 .overlay.show { display: grid; }
-#cardsOv, #shopOv, #strainOv { position: fixed; z-index: 20; }
+#cardsOv, #shopOv { position: fixed; z-index: 20; }
 /* run over: covers the whole app (arena and upgrades) and dims everything behind it; Spend DNA opens on top */
 #overlay { position: fixed; z-index: 18; }
 #overlay.overlay { background: color-mix(in srgb, var(--tray) 62%, transparent); }
@@ -205,6 +205,8 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .pcard span { font-size: 0.82rem; color: var(--muted); line-height: 1.35; display: block; }
 .pcard.boon b { color: var(--stain); }
 .pcard.curse b { color: var(--bruise); }
+.pcard em.lvl { font-style: normal; font-size: 0.72em; font-weight: 800; padding: 1px 6px; margin-left: 4px; border-radius: 4px; background: var(--tray); color: #fff; vertical-align: 2px; }
+.pcard small { display: block; margin-top: 5px; font-size: 0.74rem; color: var(--muted); }
 .pcard[aria-pressed="true"].boon { border-color: var(--stain); box-shadow: inset 0 0 0 1.5px var(--stain); }
 .pcard[aria-pressed="true"].curse { border-color: var(--bruise); box-shadow: inset 0 0 0 1.5px var(--bruise); }
 .pcard:focus-visible { outline: 2.5px solid var(--bruise); outline-offset: 2px; }
@@ -463,7 +465,7 @@ html.rm *, html.rm *::before, html.rm *::after { animation: none !important; tra
   /* no transition here: the row can't animate to or from "auto", and trying made the panel jump to full height first */
   .app { grid-template-rows: minmax(0, 1fr) minmax(260px, 52%); }
   /* host area hidden: the upgrades cover only the hosts; the world name, path and cure countdown stay visible */
-  .panel { transition: height .2s ease; }
+  .panel { transition: height .2s ease; padding-bottom: var(--sab); }
   .app.expanded .panel {
     position: fixed; left: 0; right: 0; bottom: 0; top: calc(var(--hud-bottom, 0px) + 8px); z-index: 15;
     padding-bottom: var(--sab);
@@ -514,18 +516,33 @@ html.rm *, html.rm *::before, html.rm *::after { animation: none !important; tra
   .hud-top { gap: 6px; }
   .hud-vir .lives { font-size: 0.95rem; }
 }
-/* run footer: Strain and Evolve in the center as a tab bar like the upgrade tabs, Settings as a cog on the right */
-.foot { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 0 12px; padding: 12px 0 12px; border-top: 1px solid var(--line); }
-.foot-tabs { display: flex; gap: 3px; padding: 4px; background: var(--tray); border-radius: 8px; }
-.foot-tabs .tab { position: relative; flex: 0 0 auto; padding: 8px 18px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
-#evolveBtn.ready::after { content: ""; position: absolute; top: 4px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-hi); }
+/* settings cog: top left of the arena, before the level name */
 .cog-btn {
-  justify-self: end; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; cursor: pointer;
-  color: #fff; background: var(--tray); border: 0; border-radius: 8px; box-shadow: var(--lift);
+  pointer-events: auto; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; cursor: pointer;
+  color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--lift);
 }
-.cog-btn svg { width: 22px; height: 22px; fill: currentColor; fill-rule: evenodd; }
-.cog-btn:hover { filter: brightness(1.15); }
+.cog-btn svg { width: 18px; height: 18px; fill: currentColor; fill-rule: evenodd; }
+.cog-btn:hover { filter: brightness(0.97); color: var(--bruise); }
 .cog-btn:focus-visible { outline: 2.5px solid var(--bruise); outline-offset: 2px; }
+.hud-top { grid-template-columns: auto auto minmax(0, 1fr) auto; }
+/* card column: boons, then curses, down the left of the arena (top and bottom are set in measureHud) */
+.cardcol {
+  position: absolute; left: calc(10px + var(--sal)); z-index: 4; display: flex; flex-direction: column; flex-wrap: wrap;
+  align-content: flex-start; gap: 6px; pointer-events: none;
+}
+.cardchip {
+  pointer-events: auto; position: relative; width: 30px; height: 30px; padding: 0; display: grid; place-items: center; cursor: help;
+  color: var(--bruise); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--lift);
+}
+.cardchip.curse { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.cardchip svg { width: 16px; height: 16px; }
+.cardchip b {
+  position: absolute; right: -5px; bottom: -5px; min-width: 14px; padding: 2px 3px; border-radius: 4px; text-align: center;
+  font-size: 8.5px; line-height: 1; font-weight: 800; letter-spacing: -0.02em; color: #fff; background: var(--tray);
+}
+.cardchip:hover { color: var(--ink); }
+.cardchip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2px; }
+.cardcol .sep { display: block; width: 18px; height: 1px; margin: 1px 6px; background: var(--line); }
 .foot-btn {
   position: relative; font: inherit; font-weight: 800; font-size: 0.85rem; border: 0; border-radius: 6px; padding: 8px 14px; cursor: pointer; box-shadow: var(--lift);
 }
@@ -660,6 +677,7 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
     <canvas id="cv"></canvas>
     <div class="hud">
       <div class="hud-top">
+        <button class="cog-btn" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg></button>
         <h1 class="world" id="worldName" tabindex="0">World 1</h1>
         <div class="hud-next" id="hudNext"></div>
         <div class="hud-right" id="hudRight">
@@ -672,6 +690,7 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
       </div>
     </div>
     <div class="legend" id="legend"></div>
+    <div class="cardcol" id="cardCol" aria-label="Your boons and curses"></div>
     <div class="legend-tip" id="legendTip" role="tooltip"></div>
     <button class="autobtn" id="autoBtn" aria-pressed="true"></button>
     <div class="toast" id="toast" role="status"></div>
@@ -713,13 +732,6 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
         </div>
       </div>
     </div>
-    <div class="overlay" id="strainOv">
-      <div class="pick-wrap shop">
-        <div class="shop-head"><h2>Strain</h2></div>
-        <div class="list shop-list" id="strainList"></div>
-        <div class="pick-actions"><button class="cta danger" id="strainAbandon">Abandon run</button><button class="cta" id="strainClose">Close</button></div>
-      </div>
-    </div>
     <div class="overlay" id="overlay">
       <div class="card runover">
         <h2 id="ovTitle">Run over</h2>
@@ -753,14 +765,6 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
     </div>
     <div class="tabs" role="tablist" id="tabs"></div>
     <div class="list" id="list" role="tabpanel"></div>
-    <div class="foot">
-      <span></span>
-      <div class="foot-tabs">
-        <button class="tab" id="strainBtn">Strain</button>
-        <button class="tab" id="evolveBtn">Evolve</button>
-      </div>
-      <button class="cog-btn" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg></button>
-    </div>
   </aside>
 </div>
 <div class="legend-tip float-tip" id="floatTip" role="tooltip"></div>
@@ -966,43 +970,55 @@ const MUT = {
     eff: l => "+" + l + " stack" + (l > 1 ? "s" : "") + " past cap", text: "Each death feeds stacks to infected hosts nearby" }
 };
 
-// cards
+// cards: every boon and curse has 3 levels. Picking one you already have raises it a level (I, II, III).
+// `v` holds the total effect at each level: level I is small, levels II and III are where it gets big.
+const cardPct = v => Math.round(Math.abs(v - 1) * 100) + "%";
 const BOONS = {
-  virulent:  { name: "Virulent strain", text: "+40% damage", w: 3, apply: m => { m.dmg *= 1.4; } },
-  richblood: { name: "Rich blood", text: "+40% lifeforce", w: 3, apply: m => { m.lf *= 1.4; } },
-  spare:     { name: "Spare strain", text: "+1 virus every world", w: 1, apply: m => { m.lives += 1; } },
-  longreach: { name: "Long reach", text: "Bounces reach 30% farther", w: 2, apply: m => { m.range *= 1.3; } },
-  twin:      { name: "Twin jump", text: "+25% chance a bounce hits two hosts", w: 2, apply: m => { m.split += 0.25; } },
-  slippery:  { name: "Slippery coat", text: "Immune systems learn the virus 30% slower", w: 2, apply: m => { m.adapt *= 1.3; } },
-  hotstart:  { name: "Hot start", text: "Every new infection starts with +2 stacks", w: 2, apply: m => { m.startStacks += 2; } },
-  bloom:     { name: "Corpse bloom", text: "Every death infects 1 more nearby host", w: 2, apply: m => { m.contagion += 1; } },
-  feast:     { name: "Feast", text: "Kills pay double bonus lifeforce", w: 2, apply: m => { m.harvest *= 2; } },
-  frenzy:    { name: "Frenzy", text: "Infected hosts try to bounce 30% more often", w: 2, apply: m => { m.bounceSpeed *= 1.3; } },
-  superspread: { needsBoss: 3, name: "Superspreader", text: "Every successful bounce also hits a second host", w: 1, apply: m => { m.split += 1; } },
-  necrobloom:  { needsBoss: 3, name: "Necrotic bloom", text: "Every death infects 2 more nearby hosts", w: 1, apply: m => { m.contagion += 2; } },
-  masked:    { name: "Masked", text: "The cure takes 30% longer", w: 2, apply: m => { m.cure *= 1.3; } },
-  windfall:  { name: "Windfall", text: "Double your current lifeforce right now", w: 2, once: () => { R.lf *= 2; } },
-  mutagen:   { name: "Mutagen", text: "Gain a random mutation at level 1", w: 1, once: () => {
-    const opts = Object.keys(MUT).filter(k => R.mu[k] < MUT[k].max);
-    if (!opts.length) return;
-    const k = opts[Math.floor(Math.random() * opts.length)];
-    R.found[k] = true; G.seen.muts[k] = true; R.mu[k] = Math.max(1, R.mu[k] + (R.mu[k] ? 1 : 0));
+  virulent:  { name: "Virulent strain", w: 3, v: [1.15, 1.45, 2], desc: v => "+" + cardPct(v) + " damage", apply: (m, v) => { m.dmg *= v; } },
+  richblood: { name: "Rich blood", w: 3, v: [1.15, 1.45, 2], desc: v => "+" + cardPct(v) + " lifeforce", apply: (m, v) => { m.lf *= v; } },
+  spare:     { name: "Spare strain", w: 1, v: [0, 1, 2], desc: v => v ? "+" + v + " virus" + (v > 1 ? "es" : "") + " every world" : "+1 virus on boss worlds",
+    apply: (m, v) => { if (v) m.lives += v; else m.bossLives += 1; } },
+  longreach: { name: "Long reach", w: 2, v: [1.1, 1.3, 1.6], desc: v => "Bounces reach " + cardPct(v) + " farther", apply: (m, v) => { m.range *= v; } },
+  twin:      { name: "Twin jump", w: 2, v: [0.1, 0.3, 0.6], desc: v => "+" + Math.round(v * 100) + "% chance a bounce hits two hosts", apply: (m, v) => { m.split += v; } },
+  slippery:  { name: "Slippery coat", w: 2, v: [1.1, 1.3, 1.6], desc: v => "Immune systems learn the virus " + cardPct(v) + " slower", apply: (m, v) => { m.adapt *= v; } },
+  hotstart:  { name: "Hot start", w: 2, v: [1, 2, 4], desc: v => "Every new infection starts with +" + v + " stack" + (v > 1 ? "s" : ""), apply: (m, v) => { m.startStacks += v; } },
+  bloom:     { name: "Corpse bloom", w: 2, v: [1, 2, 4], desc: v => "Every death infects " + v + " more nearby host" + (v > 1 ? "s" : ""), apply: (m, v) => { m.contagion += v; } },
+  feast:     { name: "Feast", w: 2, v: [1.3, 2, 3], desc: v => "Kills pay " + (v === 2 ? "double" : v === 3 ? "triple" : "+" + cardPct(v)) + " bonus lifeforce", apply: (m, v) => { m.harvest *= v; } },
+  frenzy:    { name: "Frenzy", w: 2, v: [1.1, 1.3, 1.6], desc: v => "Infected hosts try to bounce " + cardPct(v) + " more often", apply: (m, v) => { m.bounceSpeed *= v; } },
+  superspread: { needsBoss: 3, name: "Superspreader", w: 1, v: [0.35, 0.7, 1], desc: v => v >= 1 ? "Every successful bounce also hits a second host" : Math.round(v * 100) + "% of bounces also hit a second host", apply: (m, v) => { m.split += v; } },
+  necrobloom:  { needsBoss: 3, name: "Necrotic bloom", w: 1, v: [2, 3, 5], desc: v => "Every death infects " + v + " more nearby hosts", apply: (m, v) => { m.contagion += v; } },
+  masked:    { name: "Masked", w: 2, v: [1.1, 1.3, 1.6], desc: v => "The cure takes " + cardPct(v) + " longer", apply: (m, v) => { m.cure *= v; } },
+  windfall:  { name: "Windfall", w: 2, v: [1.25, 2, 3], desc: v => (v === 2 ? "Double" : v === 3 ? "Triple" : "+" + cardPct(v) + " to") + " your current lifeforce right now", once: v => { R.lf *= v; } },
+  mutagen:   { name: "Mutagen", w: 1, v: [1, 2, 3], desc: v => "Gain " + v + " random mutation level" + (v > 1 ? "s" : ""), once: v => {
+    for (let i = 0; i < v; i++) {
+      const opts = Object.keys(MUT).filter(k => R.mu[k] < MUT[k].max);
+      if (!opts.length) return;
+      const k = opts[Math.floor(Math.random() * opts.length)];
+      R.found[k] = true; G.seen.muts[k] = true; R.mu[k]++;
+    }
   } }
 };
 const CURSES = {
-  cold:       { name: "Cold snap", text: "Stacks build 30% slower", w: 2, pain: 2, apply: m => { m.stackSlow *= 1.3; } },
-  fever:      { name: "Fever", text: "Hosts heal twice as fast", w: 2, pain: 2, apply: m => { m.regen *= 2; } },
-  vigilant:   { name: "Vigilant", text: "Immune systems learn the virus 25% faster", w: 2, pain: 3, apply: m => { m.adapt *= 0.8; } },
-  vaccinated: { name: "Vaccinated", text: "12% of hosts can't be infected", w: 2, pain: 2, apply: m => { m.vacc += 0.12; } },
-  healers:    { name: "Healers", text: "Some hosts remove stacks from infected neighbors", w: 2, pain: 3, apply: m => { m.healers += 0.08; } },
-  sentinels:  { name: "Sentinels", text: "Some hosts resist until a neighbor dies", w: 2, pain: 2, apply: m => { m.sentinels += 0.12; } },
-  hardy:      { name: "Hardy stock", text: "Hosts have 35% more health", w: 2, pain: 1, apply: m => { m.hp *= 1.35; } },
-  scattered:  { name: "Scattered", text: "Hosts spread out, with fewer clusters", w: 2, pain: 2, apply: m => { m.scatter += 1; } },
-  thinair:    { name: "Thin air", text: "Bounces reach 20% less far", w: 2, pain: 3, apply: m => { m.range *= 0.8; } },
-  alarm:      { name: "Alarm", text: "Each kill raises the immune alert twice as much", w: 2, pain: 2, apply: m => { m.alert *= 2; } },
-  rushed:     { name: "Crash program", text: "The cure arrives 20% sooner", w: 2, pain: 3, apply: m => { m.cure *= 0.8; } },
-  lean:       { name: "Lean times", text: "−25% lifeforce", w: 2, pain: 1, apply: m => { m.lf *= 0.75; } }
+  cold:       { name: "Cold snap", w: 2, pain: 2, v: [1.1, 1.3, 1.6], desc: v => "Stacks build " + cardPct(v) + " slower", apply: (m, v) => { m.stackSlow *= v; } },
+  fever:      { name: "Fever", w: 2, pain: 2, v: [1.3, 2, 3], desc: v => v === 2 ? "Hosts heal twice as fast" : v === 3 ? "Hosts heal 3 times as fast" : "Hosts heal " + cardPct(v) + " faster", apply: (m, v) => { m.regen *= v; } },
+  vigilant:   { name: "Vigilant", w: 2, pain: 3, v: [0.92, 0.8, 0.65], desc: v => "Immune systems learn the virus " + cardPct(1 / v) + " faster", apply: (m, v) => { m.adapt *= v; } },
+  vaccinated: { name: "Vaccinated", w: 2, pain: 2, v: [0.05, 0.12, 0.2], desc: v => Math.round(v * 100) + "% of hosts can't be infected", apply: (m, v) => { m.vacc += v; } },
+  healers:    { name: "Healers", w: 2, pain: 3, v: [0.03, 0.08, 0.14], desc: v => Math.round(v * 100) + "% of hosts remove stacks from infected neighbors", apply: (m, v) => { m.healers += v; } },
+  sentinels:  { name: "Sentinels", w: 2, pain: 2, v: [0.05, 0.12, 0.2], desc: v => Math.round(v * 100) + "% of hosts resist until a neighbor dies", apply: (m, v) => { m.sentinels += v; } },
+  hardy:      { name: "Hardy stock", w: 2, pain: 1, v: [1.12, 1.35, 1.8], desc: v => "Hosts have " + cardPct(v) + " more health", apply: (m, v) => { m.hp *= v; } },
+  scattered:  { name: "Scattered", w: 2, pain: 2, v: [0.4, 1, 1.6], desc: v => v < 1 ? "Hosts spread out a little" : v > 1 ? "Hosts spread out a lot, with hardly any clusters" : "Hosts spread out, with fewer clusters", apply: (m, v) => { m.scatter += v; } },
+  thinair:    { name: "Thin air", w: 2, pain: 3, v: [0.93, 0.8, 0.68], desc: v => "Bounces reach " + cardPct(v) + " less far", apply: (m, v) => { m.range *= v; } },
+  alarm:      { name: "Alarm", w: 2, pain: 2, v: [1.3, 2, 3], desc: v => "Each kill raises the immune alert " + (v === 2 ? "twice" : v === 3 ? "3 times" : cardPct(v) + " more than") + (v >= 2 ? " as much" : " usual"), apply: (m, v) => { m.alert *= v; } },
+  rushed:     { name: "Crash program", w: 2, pain: 3, v: [0.93, 0.8, 0.68], desc: v => "The cure arrives " + cardPct(v) + " sooner", apply: (m, v) => { m.cure *= v; } },
+  lean:       { name: "Lean times", w: 2, pain: 1, v: [0.9, 0.75, 0.55], desc: v => "−" + cardPct(v) + " lifeforce", apply: (m, v) => { m.lf *= v; } }
 };
+const CARD_MAX = 3;
+const cardDef = (kind, k) => kind === "boon" ? BOONS[k] : CURSES[k];
+// a card's level is how many times it was picked, up to 3 (old saves can have more; they count as 3)
+const cardLevel = (kind, k) => Math.min(CARD_MAX, (kind === "boon" ? R.boons : R.curses).filter(x => x === k).length);
+const cardText = (kind, k, l) => { const d = cardDef(kind, k); return d.desc(d.v[Math.max(1, Math.min(CARD_MAX, l)) - 1]); };
+const roman = n => ["", "I", "II", "III", "IV", "V"][n] || String(n);
+const cardLevelsText = (kind, k) => cardDef(kind, k).v.map((v, i) => "Level " + roman(i + 1) + ": " + cardDef(kind, k).desc(v)).join(". ") + ".";
 
 // permanent upgrades (DNA)
 const PERM = {
@@ -1056,9 +1072,12 @@ function newRun() {
   R.offer = makeOffer();
   R.pickB = null; R.pickC = null; R.touched = false; R.autoT = 0;
 }
-function chooseStart(b, c) {
+function takeCards(b, c) {
   R.boons.push(b); R.curses.push(c);
-  if (BOONS[b].once) BOONS[b].once();
+  if (BOONS[b].once) BOONS[b].once(BOONS[b].v[cardLevel("boon", b) - 1]);
+}
+function chooseStart(b, c) {
+  takeCards(b, c);
   recomputeMods();
   generateWorld(); // so curses like Scattered or Healers shape world 1
   R.lives = maxLives();
@@ -1066,7 +1085,7 @@ function chooseStart(b, c) {
   R.phase = "pick"; R.autoT = 0;
   if (!silent) { $("cardsOv").classList.remove("show"); renderTabs(); renderPanel(); updateHud(); save(); }
 }
-const neutralMods = () => ({ dmg: 1, lf: 1, lives: 0, range: 1, split: 0, adapt: 1, startStacks: 0, contagion: 0, harvest: 1, bounceSpeed: 1,
+const neutralMods = () => ({ dmg: 1, lf: 1, lives: 0, bossLives: 0, range: 1, split: 0, adapt: 1, startStacks: 0, contagion: 0, harvest: 1, bounceSpeed: 1,
   stackSlow: 1, regen: 1, cure: 1, vacc: 0, healers: 0, sentinels: 0, hp: 1, scatter: 0, alert: 1 });
 const NEUTRAL = neutralMods();
 // which cards touch which modifier (found by applying each card to a neutral set)
@@ -1074,25 +1093,25 @@ function cardsAffecting(key) {
   const out = [];
   const count = {}; R.boons.forEach(k => count["b:" + k] = (count["b:" + k] || 0) + 1); R.curses.forEach(k => count["c:" + k] = (count["c:" + k] || 0) + 1);
   for (const id in count) {
-    const [t, k] = id.split(":"), def = t === "b" ? BOONS[k] : CURSES[k];
+    const [t, k] = id.split(":"), def = t === "b" ? BOONS[k] : CURSES[k], l = Math.min(CARD_MAX, count[id]);
     if (!def.apply) continue;
-    const m = neutralMods(); def.apply(m);
-    if (m[key] !== NEUTRAL[key]) out.push((t === "b" ? "Boon" : "Curse") + ", " + def.name + (count[id] > 1 ? " ×" + count[id] : "") + ": " + def.text);
+    const m = neutralMods(); def.apply(m, def.v[l - 1]);
+    if (m[key] !== NEUTRAL[key]) out.push((t === "b" ? "Boon" : "Curse") + ", " + def.name + " " + roman(l) + ": " + def.desc(def.v[l - 1]));
   }
   return out;
 }
 function recomputeMods() {
-  M = { dmg: 1, lf: 1, lives: 0, range: 1, split: 0, adapt: 1, startStacks: 0, contagion: 0, harvest: 1, bounceSpeed: 1,
-        stackSlow: 1, regen: 1, cure: 1, vacc: 0, healers: 0, sentinels: 0, hp: 1, scatter: 0, alert: 1 };
-  for (const k of R.boons) if (BOONS[k].apply) BOONS[k].apply(M);
-  for (const k of R.curses) CURSES[k].apply(M);
+  M = neutralMods();
+  // each card applies once, at its level
+  for (const k of new Set(R.boons)) if (BOONS[k].apply) BOONS[k].apply(M, BOONS[k].v[cardLevel("boon", k) - 1]);
+  for (const k of new Set(R.curses)) CURSES[k].apply(M, CURSES[k].v[cardLevel("curse", k) - 1]);
 }
-const maxLives = () => BASE_LIVES + G.p.lives + M.lives;
+const maxLives = () => BASE_LIVES + G.p.lives + M.lives + (isBossWorld(R.world) ? M.bossLives : 0);
 
 // ================= canvas & geometry =================
 const cv = $("cv"), ctx = cv.getContext("2d"), stage = $("stage");
 let W = 0, H = 0, DPR = 1;
-const PAD_TOP = 84, PAD_BOT = 40, PAD_X = 22;
+const PAD_TOP = 84, PAD_BOT = 40, PAD_X = 22, CARD_COL = 36;
 function resize() {
   const r = stage.getBoundingClientRect();
   DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -1114,11 +1133,15 @@ function measureHud() {
   if (hud) document.documentElement.style.setProperty("--hud-bottom", Math.round(hud.getBoundingClientRect().bottom) + "px"); // where "Hide host area" stops
   const tops = [$("legend"), $("autoBtn")].map(el => el && el.offsetHeight ? el.getBoundingClientRect().top - sr.top : H).filter(v => v > 0);
   legendTop = tops.length ? Math.min(...tops) : H - PAD_BOT;
+  // the card column runs from under the HUD down to the legend
+  const col = $("cardCol");
+  if (col) { col.style.top = Math.round(hudBottom + 10) + "px"; col.style.bottom = Math.max(0, Math.round(H - legendTop + 8)) + "px"; }
 }
 function field() {
   const m = Math.max(16, Math.min(30, H * 0.06)); // clearance for host radius, rings and labels (hosts are smaller on short arenas)
   const top = hudBottom + m, bottom = (legendTop || H - PAD_BOT) - m;
-  return { x: PAD_X + 14, y: top, w: Math.max(50, W - (PAD_X + 14) * 2), h: Math.max(50, bottom - top) };
+  // the left side keeps room for the card column (always, so the map never jumps when a card is added)
+  return { x: PAD_X + 14 + CARD_COL, y: top, w: Math.max(50, W - (PAD_X + 14) * 2 - CARD_COL), h: Math.max(50, bottom - top) };
 }
 // Every world lives in a fixed 1.4 : 1 space, so host layout and distances are the same on any screen.
 // It's scaled uniformly to fit the play field, and turned sideways when the field is taller than wide.
@@ -1579,15 +1602,15 @@ function weightedPick(pool, n) {
 function makeOffer() {
   // Windfall is useless before you have any lifeforce, so it stays out of the opening pick
   const pool = Object.fromEntries(Object.entries(BOONS).filter(([k, d]) =>
-    !(R.phase === "start" && k === "windfall") && (d.needsBoss === undefined || G.bosses[d.needsBoss])));
-  const offer = { boons: weightedPick(pool, 3), curses: weightedPick(CURSES, 3) };
+    !(R.phase === "start" && k === "windfall") && (d.needsBoss === undefined || G.bosses[d.needsBoss]) && cardLevel("boon", k) < CARD_MAX));
+  const cpool = Object.fromEntries(Object.entries(CURSES).filter(([k]) => cardLevel("curse", k) < CARD_MAX));
+  const offer = { boons: weightedPick(pool, 3), curses: weightedPick(cpool, 3) };
   offer.boons.forEach(k => G.seen.boons[k] = true); offer.curses.forEach(k => G.seen.curses[k] = true);
   return offer;
 }
 function chooseCards(b, c) {
   R.newBoss = undefined;
-  R.boons.push(b); R.curses.push(c);
-  if (BOONS[b].once) BOONS[b].once();
+  takeCards(b, c);
   recomputeMods();
   R.world++;
   R.lives = maxLives();
@@ -1677,8 +1700,8 @@ function bestStart() {
 }
 function autoCards() {
   const focus = setting("boonFocus", "doctrine"), rule = setting("curseRule", "doctrine");
-  const bScore = k => (focus !== "balanced" && BOON_TAGS[k] === focus ? -10 : 0) + BOONS[k].w + Math.random() * 0.1;
-  const cScore = k => CURSES[k].pain + (rule === "noMap" && MAP_CURSES.includes(k) ? 10 : 0) + (rule === "noImmune" && IMMUNE_CURSES.includes(k) ? 10 : 0) + Math.random() * 0.1;
+  const bScore = k => (focus !== "balanced" && BOON_TAGS[k] === focus ? -10 : 0) + BOONS[k].w - cardLevel("boon", k) + Math.random() * 0.1;
+  const cScore = k => CURSES[k].pain + 2 * cardLevel("curse", k) + (rule === "noMap" && MAP_CURSES.includes(k) ? 10 : 0) + (rule === "noImmune" && IMMUNE_CURSES.includes(k) ? 10 : 0) + Math.random() * 0.1;
   const b = R.offer.boons.slice().sort((x, y) => bScore(x) - bScore(y))[0];
   const c = R.offer.curses.slice().sort((x, y) => cScore(x) - cScore(y))[0];
   if (R.phase === "start") chooseStart(b, c); else chooseCards(b, c);
@@ -1771,7 +1794,10 @@ function cardBtn(kind, key) {
   const b = document.createElement("button");
   b.className = "pcard " + kind;
   b.setAttribute("aria-pressed", (kind === "boon" ? R.pickB : R.pickC) === key);
-  b.innerHTML = "<b>" + def.name + "</b><span>" + def.text + "</span>";
+  // the level this pick gives, and what you have now if it's an upgrade
+  const have = cardLevel(kind, key), next = have + 1;
+  b.innerHTML = "<b>" + def.name + ' <em class="lvl">' + roman(next) + "</em></b><span>" + cardText(kind, key, next) + "</span>" +
+    (have ? "<small>You have level " + roman(have) + ": " + cardText(kind, key, have) + "</small>" : "");
   b.addEventListener("click", () => { if (kind === "boon") R.pickB = key; else R.pickC = key; R.touched = true; showCards(); });
   return b;
 }
@@ -2059,7 +2085,7 @@ function updateHud() {
   if (menuOpen && Math.random() < 0.2) refreshMenuStatus();
   updateCountdowns();
   updateAutoBtn();
-  updateEvolveDot();
+  renderCardCol();
   renderHandle();
   measureHud();
 }
@@ -2283,35 +2309,57 @@ function load() {
 document.addEventListener("visibilitychange", () => { if (document.hidden) save(); });
 window.addEventListener("pagehide", save);
 
-// run footer: Strain and Evolve open as popups
-$("evolveBtn").addEventListener("click", () => { shopFromRun = true; showShop(); });
-$("strainBtn").addEventListener("click", showStrain);
-function showStrain() {
-  const el = $("strainList"); el.innerHTML = ""; renderStrain(el);
-  const ab = $("strainAbandon"); ab.dataset.armed = ""; ab.textContent = "Abandon run"; ab.disabled = !runActive();
-  $("strainOv").classList.add("show");
-}
-// abandon needs a second tap within 4 seconds, so it can't happen by accident
-let abandonTimer;
-$("strainAbandon").addEventListener("click", () => {
-  const ab = $("strainAbandon");
-  if (!ab.dataset.armed) {
-    ab.dataset.armed = "1"; ab.textContent = "Tap again to abandon";
-    clearTimeout(abandonTimer); abandonTimer = setTimeout(() => { ab.dataset.armed = ""; ab.textContent = "Abandon run"; }, 4000);
-    return;
-  }
-  clearTimeout(abandonTimer); hideFloatTip();
-  $("strainOv").classList.remove("show");
-  if (runActive()) { R.lives = 0; runOver(); }
-});
-$("strainClose").addEventListener("click", () => { hideFloatTip(); $("strainOv").classList.remove("show"); });
-// a pink dot on Evolve when you can afford something there
-function updateEvolveDot() {
-  const can = Object.keys(PERM).some(k => { const d = PERM[k]; return G.p[k] < d.max && (d.needsBoss === undefined || G.bosses[d.needsBoss]) && G.dna >= upCost(d, G.p[k]); }) ||
-    Object.keys(AUTO).some(k => !G.auto[k].owned && G.best >= AUTO[k].needs && G.dna >= AUTO[k].cost);
-  $("evolveBtn").classList.toggle("ready", can);
-}
-// phones: the upgrade panel can expand to take most of the screen, or hide down to one bar
+// card column: one icon per boon and curse down the left of the arena, with its level in Roman numerals.
+// Tap or hover one to see what it does.
+const ICON_ATTR = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+const CARD_ICONS = {
+  virulent: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  richblood: '<path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/>',
+  spare: '<circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/>',
+  longreach: '<path d="M3 12h16M15 7l5 5-5 5"/>',
+  twin: '<path d="M3 12h6l5-5h6M9 12l5 5h6"/>',
+  slippery: '<path d="M3 9c3-3 6 3 9 0s6 3 9 0M3 15c3-3 6 3 9 0s6 3 9 0"/>',
+  hotstart: '<path d="M12 3c1 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-5 3-6 0 2 1 3 2 3 0-3-1-5 1-8z"/>',
+  bloom: '<circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="5.5" r="2.5"/><circle cx="12" cy="18.5" r="2.5"/><circle cx="5.5" cy="12" r="2.5"/><circle cx="18.5" cy="12" r="2.5"/>',
+  feast: '<path d="M7 3v18M4 3v5a3 3 0 0 0 6 0V3M17 21V3c-3 2-3 8 0 9"/>',
+  frenzy: '<path d="M3 13l3-5 3 9 3-11 3 11 3-9 3 5"/>',
+  superspread: '<path d="M12 3v18M3 12h18M5.5 5.5l13 13M18.5 5.5l-13 13"/>',
+  necrobloom: '<path d="M12 3a7 7 0 0 0-4 12.7V19h8v-3.3A7 7 0 0 0 12 3z"/><path d="M9.5 10h.01M14.5 10h.01M10 19v2M14 19v2"/>',
+  masked: '<path d="M3 8c4-2 14-2 18 0 0 5-3 8-6 8l-3-2-3 2c-3 0-6-3-6-8z"/><path d="M8 10.5h2M14 10.5h2"/>',
+  windfall: '<ellipse cx="12" cy="7" rx="7" ry="3"/><path d="M5 7v5c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5"/>',
+  mutagen: '<path d="M7 3c0 9 10 9 10 18M17 3c0 9-10 9-10 18M8.5 7h7M8.5 17h7"/>',
+  cold: '<path d="M12 2v20M3.3 7l17.4 10M20.7 7 3.3 17"/>',
+  fever: '<path d="M10 4a2 2 0 0 1 4 0v10a4 4 0 1 1-4 0z"/><path d="M12 9v6"/>',
+  vigilant: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  vaccinated: '<path d="M18 2l4 4M16 4l4 4M18 6 8 16l-3 1 1-3L16 4M5 19l-2 2M10 10l2 2"/>',
+  healers: '<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>',
+  sentinels: '<path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/>',
+  hardy: '<path d="M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"/>',
+  scattered: '<circle cx="5" cy="6" r="1.5"/><circle cx="18" cy="5" r="1.5"/><circle cx="11" cy="12" r="1.5"/><circle cx="4" cy="18" r="1.5"/><circle cx="19" cy="17" r="1.5"/>',
+  thinair: '<path d="M3 12h9M8 8l4 4-4 4M17 5v14"/>',
+  alarm: '<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/>',
+  rushed: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>',
+  lean: '<path d="M12 4v15M6 13l6 6 6-6"/>'
+};
+let cardColKey = "";
+function renderCardCol() {
+  const key = R.phase + "|" + R.boons.join() + "|" + R.curses.join();
+  if (key === cardColKey) return; cardColKey = key;
+  const el = $("cardCol"); el.innerHTML = "";
+  if (R.phase === "idle") return;
+  const add = (kind, k) => {
+    const d = cardDef(kind, k), l = cardLevel(kind, k), b = document.createElement("button");
+    b.type = "button"; b.className = "cardchip " + kind;
+    b.innerHTML = "<svg " + ICON_ATTR + ">" + (CARD_ICONS[k] || '<circle cx="12" cy="12" r="6"/>') + "</svg><b>" + roman(l) + "</b>";
+    b.dataset.tipTitle = (kind === "boon" ? "Boon: " : "Curse: ") + d.name + " " + roman(l);
+    b.dataset.tip = cardText(kind, k, l) + "." + (l < CARD_MAX ? " Picking it again " + (kind === "boon" ? "upgrades" : "worsens") + " it to level " + roman(l + 1) + ": " + cardText(kind, k, l + 1) + "." : " Fully upgraded.");
+    b.setAttribute("aria-label", b.dataset.tipTitle + ". " + b.dataset.tip);
+    el.appendChild(b);
+  };
+  [...new Set(R.boons)].forEach(k => add("boon", k));
+  if (R.boons.length && R.curses.length) { const s = document.createElement("i"); s.className = "sep"; el.appendChild(s); }
+  [...new Set(R.curses)].forEach(k => add("curse", k));
+}// phones: the upgrade panel can expand to take most of the screen, or hide down to one bar
 function setExpanded(ex) {
   document.querySelector(".app").classList.toggle("expanded", ex);
   renderHandle();
@@ -2588,8 +2636,8 @@ function codexEntries() {
   ZONES.forEach((z, i) => add("Bosses", i, !!G.seen.bosses[i], z.boss,
     "World " + (i + 1) * ZONE_SIZE + ", end of " + z.name + ". " + z.bossText + (G.bosses[i] ? " Defeated. " + z.reward + "." : " Reward: " + z.reward + "."),
     { boss: true, healer: i === 1, sentinel: i === 2 }));
-  for (const k in BOONS) add("Boons", k, !!G.seen.boons[k], BOONS[k].name, BOONS[k].text);
-  for (const k in CURSES) add("Curses", k, !!G.seen.curses[k], CURSES[k].name, CURSES[k].text);
+  for (const k in BOONS) add("Boons", k, !!G.seen.boons[k], BOONS[k].name, cardLevelsText("boon", k));
+  for (const k in CURSES) add("Curses", k, !!G.seen.curses[k], CURSES[k].name, cardLevelsText("curse", k));
   for (const k in MUT) add("Mutations", k, !!G.seen.muts[k], MUT[k].name, MUT[k].text + ". Unlocks with " + Object.entries(MUT[k].needs).map(([u, n]) => UP[u].name + " " + n).join(" and ") + ", or from the Mutagen boon.");
   return out;
 }
@@ -2693,7 +2741,11 @@ function showMenu() {
   const btn = (label, cls, fn) => { const b = document.createElement("button"); b.className = "bar-btn " + cls; b.textContent = label; b.addEventListener("click", fn); acts.appendChild(b); return b; };
   if (runActive()) {
     btn("Continue", "primary", hideMenu);
-    btn("Abandon run", "quiet", () => { hideMenu(); R.lives = 0; runOver(); });
+    // abandon needs a second tap within 4 seconds, so it can't happen by accident
+    const ab = btn("Abandon run", "quiet", () => {
+      if (!ab.dataset.armed) { ab.dataset.armed = "1"; ab.textContent = "Tap again to abandon"; setTimeout(() => { ab.dataset.armed = ""; ab.textContent = "Abandon run"; }, 4000); return; }
+      hideMenu(); R.lives = 0; runOver();
+    });
   } else {
     btn("Play", "primary", () => { G.settings.autoChoose = false; hideMenu(); startNewRun(); });
     btn("AFK run", "afk", () => { G.settings.autoChoose = true; hideMenu(); startNewRun(); });
@@ -2766,7 +2818,7 @@ function hideMenu() { menuOpen = false; awayNote = ""; $("menu").classList.remov
 $("ascSel").addEventListener("change", e => { G.asc = +e.target.value; save(); });
 $("settingsBtn").addEventListener("click", () => { renderSettings(); renderSwatches(); openSub("settings"); });
 $("toMenu").addEventListener("click", () => { closeSub("settings"); showMenu(); });
-document.addEventListener("keydown", e => { if (e.key === "Escape") { if ($("strainOv").classList.contains("show")) $("strainOv").classList.remove("show"); else if ($("settings").classList.contains("show")) closeSub("settings"); else if ($("codex").classList.contains("show")) closeSub("codex"); else if (menuOpen && runActive()) hideMenu(); else showMenu(); } });
+document.addEventListener("keydown", e => { if (e.key === "Escape") { if ($("settings").classList.contains("show")) closeSub("settings"); else if ($("codex").classList.contains("show")) closeSub("codex"); else if (menuOpen && runActive()) hideMenu(); else showMenu(); } });
 $("mEvolve").addEventListener("click", () => { shopFromMenu = true; $("shopOv").classList.add("from-menu"); showShop(); });
 $("mCodex").addEventListener("click", showCodex);
 $("mHow").addEventListener("click", () => { $("introGo").textContent = "Back"; openSub("intro"); startGuide(); });
@@ -2983,7 +3035,7 @@ addEventListener("message", e => {
   if (d.input) { const el = mirrorFind(d.input); if (el) { el.value = d.value; el.dispatchEvent(new Event(d.type, { bubbles: true })); } }
   if (d.key) document.dispatchEvent(new KeyboardEvent("keydown", { key: d.key, bubbles: true }));
 });
-window.__host = { get G() { return G; }, get R() { return R; }, generateWorld, UP, startNewRun, recomputeMods, hostPos, rangePx, renderPanel: () => renderPanel(), step, autoTick, catchUp, buyPerm, PERM, AUTO, upCost,
+window.__host = { get G() { return G; }, get R() { return R; }, get M() { return M; }, showCards, generateWorld, UP, startNewRun, recomputeMods, hostPos, rangePx, renderPanel: () => renderPanel(), step, autoTick, catchUp, buyPerm, PERM, AUTO, upCost,
   setSilent: v => { silent = v; } };
 requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
 })();
