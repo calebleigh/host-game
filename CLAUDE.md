@@ -80,7 +80,7 @@ generateWorld, hostPos, rangePx, recomputeMods, startNewRun, setSilent, ...). Ke
 - **menus**: main menu, settings, codex, sub-screen handling (`openSub` / `closeSub`).
 
 Phases (`R.phase`): `idle` (no run), `start` (opening card pick), `pick` (place a virus), `run`, `cards`
-(after a world), `over` (with `R.stage` = `summary` then `shop`).
+(after a world), `over` (the run summary; `R.shopHold` means the auto restart was stopped).
 
 ## Game rules as they stand
 
@@ -124,8 +124,9 @@ world 1 to 3x by world 10. Change one knob at a time and re-run `tools/sim.py`.
 8. **Auto-choose**: anything undecided is picked automatically after 15s when the window is focused, 5s when
    not (1s with the Reflexes perk). Picking a card yourself pauses it. Auto placement defaults to
    "Easiest targets". There's an Auto on/off button in the arena corner (red play icon when on, gray pause when off).
-9. **Run end flow**: summary (6s) then the Evolve DNA screen with a 10s "Next run in Ns" countdown that the
-   player can stop by tapping it; any other tap resets the countdown.
+9. **Run end flow**: one full-screen summary (everything behind it dimmed) with Main menu, Spend DNA and Start
+   over. With Auto on, a line says "Next run starts in 15s" with a "Stay here" button; Stay here, Spend DNA or
+   Main menu stops it ("Stopped. Nothing happens until you choose."). Closing Spend DNA returns to the summary.
 10. **Explain things in game**: host types in the legend tooltips, why a virus died (toast), fought-off markers,
     the How to play guide with animations, and the Codex.
 11. **Theme**: Settings has Main color (tints the whole app: backgrounds, panels, cells, borders, tray) and

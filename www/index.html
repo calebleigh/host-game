@@ -158,6 +158,16 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 }
 .overlay.show { display: grid; }
 #cardsOv, #shopOv, #strainOv { position: fixed; z-index: 20; }
+/* run over: covers the whole app (arena and upgrades) and dims everything behind it; Spend DNA opens on top */
+#overlay { position: fixed; z-index: 18; }
+#overlay.overlay { background: color-mix(in srgb, var(--tray) 62%, transparent); }
+.runover { width: min(520px, 100%); }
+.runover h2 { margin-top: 0; }
+.ov-auto { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; background: var(--slide); font-size: 0.88rem; font-weight: 600; color: var(--ink); }
+.ov-auto[hidden] { display: none; }
+.ov-auto .side-btn { flex-shrink: 0; padding: 6px 12px; }
+.ov-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.ov-btns > * { flex: 1 1 auto; white-space: nowrap; }
 .shop { display: flex; flex-direction: column; max-width: 560px; overflow: hidden; }
 .shop-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .shop-dna { color: var(--stain); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
@@ -711,10 +721,15 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
       </div>
     </div>
     <div class="overlay" id="overlay">
-      <div class="card">
-        <h2 id="ovTitle">World fallen</h2>
+      <div class="card runover">
+        <h2 id="ovTitle">Run over</h2>
         <div id="ovText" class="ov-text"></div>
-        <button class="cta" id="ovBtn">Continue</button>
+        <div class="ov-auto" id="ovAuto"><span id="ovAutoTxt"></span><button class="side-btn" id="ovStay">Stay here</button></div>
+        <div class="ov-btns">
+          <button class="side-btn" id="ovMenu">Main menu</button>
+          <button class="side-btn" id="ovShop">Spend DNA</button>
+          <button class="cta" id="ovBtn">Start over</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1531,17 +1546,15 @@ function chooseCards(b, c) {
   R.phase = "pick"; R.autoT = 0;
   if (!silent) { $("cardsOv").classList.remove("show"); links = []; floats = []; rateWindow = []; renderTabs(); renderPanel(); updateHud(); save(); }
 }
-// run end: summary -> DNA shop -> next run
+// run end: one summary screen with Main menu, Spend DNA and Start over. With Auto on, the next run starts by
+// itself after RESTART_WAIT unless the player stays (R.shopHold). Old saves may still have stage "shop".
 function runOver() {
   R.phase = "over"; R.stage = "summary"; R.autoT = 0; R.shopHold = false;
   // DNA is only paid out when a run ends
   if (!R.banked) { R.banked = true; G.dna += R.dna; G.dnaTotal += R.dna; }
   if (!silent) { showRunOver(); save(); }
 }
-function openShop() {
-  R.stage = "shop"; R.autoT = 0; R.shopHold = false;
-  if (!silent) { $("overlay").classList.remove("show"); showShop(); save(); }
-}
+function holdRunOver() { R.shopHold = true; updateCountdowns(); save(); }
 function startNewRun() {
   shopFromMenu = shopFromRun = false; $("shopOv").classList.remove("from-menu");
   newRun();
@@ -1625,25 +1638,22 @@ function autoTick(dt) {
   if (!G.settings.autoChoose) return;
   R.autoT += dt;
   if (R.phase === "over") {
-    if (R.stage === "summary" && R.autoT >= (silent ? 0 : SUMMARY_WAIT)) openShop();
-    else if (R.stage === "shop" && !R.shopHold && R.autoT >= (silent ? 0 : SHOP_WAIT)) startNewRun();
+    if (!R.shopHold && R.autoT >= (silent ? 0 : RESTART_WAIT)) startNewRun();
     return;
   }
   if (R.autoT < decideWait()) return;
   if (R.phase === "pick") { if (autoOn("autoBuy")) autoBuy(); place(bestStart()); }
   else if ((R.phase === "cards" || R.phase === "start") && !R.touched) autoCards();
 }
-const SUMMARY_WAIT = 6, SHOP_WAIT = 10;
+const RESTART_WAIT = 15;
 const countdown = () => Math.max(0, Math.ceil(decideWait() - R.autoT));
 
 // ================= overlays =================
-let overlayAction = null;
-function showOverlay(title, text, btn, action) {
-  $("ovTitle").textContent = title; $("ovText").textContent = text; $("ovBtn").textContent = btn;
-  overlayAction = action;
-  $("overlay").classList.add("show");
-}
-$("ovBtn").addEventListener("click", () => { $("overlay").classList.remove("show"); const a = overlayAction; overlayAction = null; if (a) a(); });
+// run over screen: Main menu, Spend DNA, Start over. Choosing anything but Start over stops the auto restart.
+$("ovBtn").addEventListener("click", startNewRun);
+$("ovStay").addEventListener("click", holdRunOver);
+$("ovShop").addEventListener("click", () => { holdRunOver(); shopFromRun = true; showShop(); });
+$("ovMenu").addEventListener("click", () => { holdRunOver(); showMenu(); });
 
 // play/pause for automatic choices, on the arena
 const PAUSE_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1" width="3" height="10"/><rect x="7" y="1" width="3" height="10"/></svg>';
@@ -1665,17 +1675,14 @@ function updateCountdowns() {
     const note = $("cardsAuto");
     note.textContent = !auto ? "" : R.touched ? "Auto-pick paused while you choose." : "Auto-picking in " + n + "s.";
   }
-  if (R.phase === "over" && R.stage === "summary" && $("overlay").classList.contains("show"))
-    $("ovBtn").textContent = auto ? "Spend DNA (" + Math.max(0, Math.ceil(SUMMARY_WAIT - R.autoT)) + "s)" : "Spend DNA";
-  if ((shopFromMenu || shopFromRun) && $("shopOv").classList.contains("show")) {
+  if (R.phase === "over" && $("overlay").classList.contains("show")) {
+    const counting = auto && !R.shopHold;
+    $("ovAuto").hidden = !auto;
+    $("ovAutoTxt").textContent = counting ? "Next run starts in " + Math.max(0, Math.ceil(RESTART_WAIT - R.autoT)) + "s" : "Stopped. Nothing happens until you choose.";
+    $("ovStay").hidden = !counting;
+  }
+  if ($("shopOv").classList.contains("show")) {
     $("shopGo").textContent = shopFromMenu ? "Back to menu" : "Close"; $("shopNote").textContent = ""; $("shopDna").textContent = fmt(G.dna);
-  } else if (R.phase === "over" && R.stage === "shop" && $("shopOv").classList.contains("show")) {
-    const b = $("shopGo"), note = $("shopNote");
-    if (auto && !R.shopHold) {
-      b.textContent = "Next run in " + Math.max(0, Math.ceil(SHOP_WAIT - R.autoT)) + "s";
-      note.textContent = "Tap to stop the countdown and keep shopping.";
-    } else { b.textContent = "Start next run"; note.textContent = ""; }
-    $("shopDna").textContent = fmt(G.dna);
   }
 }
 function showRunOver() {
@@ -1689,7 +1696,6 @@ function showRunOver() {
     '<span class="stat"><b>' + fmt(R.dna) + " DNA</b> earned, " + fmt(G.dna) + " to spend</span>" +
     '<span class="stat small">Boons: ' + counts(R.boons, BOONS) + "</span>" +
     '<span class="stat small">Curses: ' + counts(R.curses, CURSES) + "</span>";
-  overlayAction = openShop;
   $("overlay").classList.add("show");
   updateCountdowns();
 }
@@ -1704,9 +1710,8 @@ function renderShop() {
   refreshButtons();
 }
 $("shopGo").addEventListener("click", () => {
-  if (shopFromMenu || shopFromRun) { shopFromMenu = shopFromRun = false; $("shopOv").classList.remove("show", "from-menu"); if (R.phase === "over" && R.stage === "shop") showShop(); return; }
-  if (G.settings.autoChoose && !R.shopHold) { R.shopHold = true; updateCountdowns(); return; }
-  startNewRun();
+  shopFromMenu = shopFromRun = false; $("shopOv").classList.remove("show", "from-menu");
+  if (R.phase === "over") showRunOver(); // back to the run summary, with the new DNA total
 });
 // any interaction on the shop screen resets the countdown
 $("shopOv").addEventListener("pointerdown", e => { if (e.target.id !== "shopGo") R.autoT = 0; });
@@ -1783,7 +1788,11 @@ function renderTabs() {
     if (t.id === "mutations" && Object.keys(MUT).some(k => R.found[k] && R.mu[k] === 0)) {
       const d = document.createElement("span"); d.className = "dot"; b.appendChild(d);
     }
-    b.addEventListener("click", () => { tab = t.id; renderTabs(); renderPanel(); if (G.settings.hideUpgrades) setUpgradesHidden(false); });
+    // phones: tapping the open tab again folds the list away, tapping any tab while folded opens it
+    b.addEventListener("click", () => {
+      if (hudMq && hudMq.matches && tab === t.id && !G.settings.hideUpgrades) { setUpgradesHidden(true); return; }
+      tab = t.id; renderTabs(); renderPanel(); if (G.settings.hideUpgrades) setUpgradesHidden(false);
+    });
     el.appendChild(b);
   }
 }
@@ -2179,7 +2188,7 @@ function catchUp(secs) {
   links = []; floats = []; rateWindow = [];
   $("overlay").classList.remove("show"); $("cardsOv").classList.remove("show");
   if (R.phase === "cards" || R.phase === "start") showCards();
-  if (R.phase === "over") { if (R.stage === "shop") showShop(); else showRunOver(); }
+  if (R.phase === "over") showRunOver();
   renderTabs(); renderPanel(); updateHud(); save();
   if (secs > 60) {
     const parts = ["Away for " + fmtTime(secs) + "."];
@@ -2854,7 +2863,7 @@ buildLegend();
 renderTabs(); renderPanel(); updateHud();
 if (away > 5) catchUp(away);
 else if (R.phase === "cards" || R.phase === "start") showCards();
-else if (R.phase === "over") { if (R.stage === "shop") showShop(); else showRunOver(); }
+else if (R.phase === "over") showRunOver();
 applySettings();
 if (!G.introSeen) { $("intro").classList.add("show"); startMenuBg(); startGuide(); } else showMenu();
 if (document.fonts) document.fonts.ready.then(readColors);
@@ -2888,10 +2897,9 @@ function mirrorFollow(s, fx) {
 // popups that the leader opened on its own (cards after a world, run summary, Evolve after a run)
 function mirrorOverlays() {
   if (R.phase === "start" || R.phase === "cards") showCards(); else $("cardsOv").classList.remove("show");
-  if (R.phase === "over" && R.stage === "summary") { if (!$("overlay").classList.contains("show")) showRunOver(); }
+  if (R.phase === "over") { if (!$("overlay").classList.contains("show")) showRunOver(); }
   else $("overlay").classList.remove("show");
-  if (R.phase === "over" && R.stage === "shop") { if (!$("shopOv").classList.contains("show")) showShop(); }
-  else if (!shopFromMenu && !shopFromRun) $("shopOv").classList.remove("show");
+  if (!shopFromMenu && !shopFromRun) $("shopOv").classList.remove("show");
 }
 // an element is found in the other copy by the nearest id above it plus child positions
 function mirrorPath(el) {
