@@ -26,6 +26,7 @@
   <label>Closed (portrait) <input id="aw" type="number"> x <input id="ah" type="number"></label>
   <label>Open (landscape) <input id="bw" type="number"> x <input id="bh" type="number"></label>
   <button id="reload">Reload both</button>
+  <button id="reset">Fold 8 sizes</button>
 </header>
 <main id="main">
   <div class="dev"><div class="name" id="an"></div><div class="box" id="abox"><iframe id="a"></iframe></div></div>
@@ -33,14 +34,18 @@
 </main>
 <script>
 // Screen sizes in CSS pixels (what the game sees). Edit them in the header; they're remembered.
-const DEF = { aw: 412, ah: 960, bw: 960, bh: 864 };
+// Galaxy Fold 8, from the panel specs at Samsung's default display size (about 158 CSS px per inch):
+//   cover 1248 x 1972 px at 428 ppi -> 461 x 728, inner 2448 x 1848 px at 403 ppi -> 960 x 725
+const DEF = { aw: 461, ah: 728, bw: 960, bh: 725 };
+const KEY = "host-preview-sizes-v2";
 let S = DEF;
-try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem("host-preview-sizes") || "{}")); } catch (e) {}
+try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
 const $ = id => document.getElementById(id);
-for (const k in DEF) { $(k).value = S[k]; $(k).onchange = () => { S[k] = +$(k).value || DEF[k]; try { localStorage.setItem("host-preview-sizes", JSON.stringify(S)); } catch (e) {} layout(); }; }
+for (const k in DEF) { $(k).value = S[k]; $(k).onchange = () => { S[k] = +$(k).value || DEF[k]; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} layout(); }; }
 const src = "../www/index.html";
 $("a").src = src; $("b").src = src;
 $("reload").onclick = () => { $("a").src = src; $("b").src = src; };
+$("reset").onclick = () => { S = Object.assign({}, DEF); for (const k in DEF) $(k).value = S[k]; try { localStorage.removeItem(KEY); } catch (e) {} layout(); };
 // both frames are scaled down by the same amount so they keep their true proportions to each other
 function layout() {
   const availH = $("main").clientHeight - 60, availW = $("main").clientWidth - 24 - 32;
