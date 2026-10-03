@@ -532,6 +532,18 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
 .ladder { gap: clamp(3px, 1vw, 5px); padding: 3px 4px; }
 .ladder .zone { display: contents; }
 .ladder .pip.boss { margin: 0 calc(clamp(6px, 2.2vw, 9px) * 0.21); }
+/* cure countdown: a bar exactly as wide as the zone path, right under it */
+.path-wrap { width: fit-content; max-width: 100%; margin: 0 auto; }
+.curebar {
+  position: relative; height: 18px; margin-top: 6px; border-radius: 6px; overflow: hidden;
+  background: var(--slide); box-shadow: inset 0 0 0 1px var(--line);
+}
+.curebar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: color-mix(in srgb, var(--heal) 45%, transparent); }
+.curebar span {
+  position: relative; display: block; text-align: center; line-height: 18px; white-space: nowrap;
+  font-size: 0.72rem; font-weight: 700; color: var(--ink);
+}
+.curebar.idle { visibility: hidden; }
 .up .eff .buffed { color: var(--bruise); font-weight: 700; cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
 .up .eff .buffed:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2px; border-radius: 3px; }
 .swatches { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; max-width: 250px; }
@@ -610,7 +622,10 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
     <canvas id="cv"></canvas>
     <div class="hud">
       <h1 class="world" id="worldName" tabindex="0">World 1</h1>
-      <div class="ladder" id="ladder"></div>
+      <div class="path-wrap">
+        <div class="ladder" id="ladder"></div>
+        <div class="curebar" id="cureBar"><i id="cureFill"></i><span id="cureTxt"></span></div>
+      </div>
       <div class="hud-right" id="hudRight">
         <div class="hud-vir"><span class="hud-label">Viruses</span> <b class="lives" id="lives"></b></div>
         <div class="hud-next" id="hudNext"></div>
@@ -1906,7 +1921,7 @@ function updateHud() {
   const req = required();
   $("hostsLeft").textContent = req.filter(h => !h.dead).length + " / " + req.length;
   $("alert").textContent = pct(alertLevel());
-  $("cure").textContent = R.phase === "run" ? pct(Math.min(1, R.cure)) + " (" + Math.max(0, Math.ceil((1 - R.cure) * cureTime())) + "s)" : "waiting";
+  $("cure").textContent = R.phase === "run" ? pct(Math.min(1, R.cure)) + " (" + Math.max(0, Math.ceil((1 - R.cure) * cureTime())) + " days)" : "waiting";
   const ml = maxLives();
   $("lives").textContent = "●".repeat(Math.max(0, R.lives)) + "○".repeat(Math.max(0, ml - R.lives));
   // top-right status: what happens next
@@ -1916,9 +1931,15 @@ function updateHud() {
   else if (R.phase === "pick") { next = G.settings.autoChoose ? "Auto-placing in " + countdown() + "s" : "Place your next virus"; act = true; }
   else if (R.phase === "run") {
     const f = R.hosts.filter(h => h.resist > 0 && !h.inf && !h.dead).length;
-    next = "Cure lands in " + Math.max(0, Math.ceil((1 - R.cure) * cureTime())) + "s" + (f ? ", " + f + " fought off" : "");
+    if (f) next = f + " fought off";
   }
   else if (R.phase === "over") next = "Run over";
+  // cure bar under the zone path: fills up as the cure gets closer (paused while you place a virus)
+  const cureOn = R.phase === "run" || R.phase === "pick";
+  const days = Math.max(0, Math.ceil((1 - R.cure) * cureTime()));
+  $("cureBar").classList.toggle("idle", !cureOn);
+  $("cureFill").style.width = (cureOn ? Math.min(1, R.cure) * 100 : 0) + "%";
+  $("cureTxt").textContent = "Cure in " + days + (days === 1 ? " day" : " days");
   $("hudNext").textContent = next;
   $("hudNext").classList.toggle("act", act);
   $("hudRight").style.visibility = R.phase === "idle" ? "hidden" : "visible";
@@ -2337,7 +2358,7 @@ const SCENES = {
     const P = 10, tt = t % P, k = tt / P, bw = Math.min(260, w - 60), x0 = w / 2 - bw / 2, y = h / 2 - 14;
     c.fillStyle = C.line; c.fillRect(x0, y, bw, 10);
     c.fillStyle = C.life; c.fillRect(x0, y, bw * k, 10);
-    miniLabel(c, "Cure lands in " + Math.ceil((1 - k) * 120) + "s", w / 2, y - 8, C.ink, 700);
+    miniLabel(c, "Cure in " + Math.ceil((1 - k) * 120) + " days", w / 2, y - 8, C.ink, 700);
     const lives = 3 - (tt > P - 0.6 ? 1 : 0);
     for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(w / 2 - 18 + i * 18, y + 34, 6, 0, Math.PI * 2); c.fillStyle = i < lives ? C.bruise : C.line; c.fill(); }
     miniLabel(c, "viruses left this world", w / 2, y + 58);
