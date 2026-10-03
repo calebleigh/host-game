@@ -103,6 +103,11 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .legend i.frail { width: 9px; height: 9px; border-width: 1px; }
 .legend i.sturdy { width: 15px; height: 15px; border-width: 3px; }
 .legend i.carrier { outline: 1.5px dotted var(--stain); outline-offset: 2px; }
+.legend { flex-wrap: nowrap; }
+.leg span { white-space: nowrap; }
+.legend.compact { gap: 6px; flex-wrap: wrap; } /* wraps only if even the icons don't fit (tiny screens, busy worlds) */
+.legend.compact .leg { padding: 4px 3px; text-decoration: none; }
+.legend.compact .leg span { display: none; }
 
 .panel {
   background: var(--panel);
@@ -1058,6 +1063,7 @@ function resize() {
   W = r.width; H = r.height;
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (R) fitLegend();
   measureHud();
 }
 const hudMq = window.matchMedia ? matchMedia("(max-width: 760px), (orientation: portrait) and (max-width: 1000px)") : null;
@@ -1212,7 +1218,7 @@ function buildLegend() {
   for (const k of items) {
     const b = document.createElement("button");
     b.className = "leg"; b.type = "button"; b.dataset.k = k;
-    b.innerHTML = '<i class="' + (k === "common" ? "" : k) + '"></i>' + (k === "boss" ? "Boss" : HOST_INFO[k][0]);
+    b.innerHTML = '<i class="' + (k === "common" ? "" : k) + '"></i><span>' + (k === "boss" ? "Boss" : HOST_INFO[k][0]) + "</span>";
     b.setAttribute("aria-label", HOST_INFO[k][0] + ": " + HOST_INFO[k][1]);
     b.addEventListener("mouseenter", () => showTip(b));
     b.addEventListener("mouseleave", hideTip);
@@ -1221,6 +1227,17 @@ function buildLegend() {
     b.addEventListener("click", e => { e.stopPropagation(); showTip(b); }); // tapping elsewhere closes it
     el.appendChild(b);
   }
+  fitLegend();
+}
+// the legend stays on one line so it never eats into the arena: labels when they fit, otherwise just the
+// host icons (tapping one still names and explains it)
+function fitLegend() {
+  const el = $("legend"), ab = $("autoBtn");
+  if (silent || !el) return;
+  const sr = stage.getBoundingClientRect();
+  if (ab && ab.offsetWidth) el.style.right = (sr.right - ab.getBoundingClientRect().left + 12) + "px";
+  el.classList.remove("compact");
+  if (el.scrollWidth > el.clientWidth + 1) el.classList.add("compact");
 }
 let tipFor = null;
 function showTip(b) {
