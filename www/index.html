@@ -218,19 +218,22 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .setting select { font: inherit; font-size: 0.85rem; color: var(--ink); background: var(--slide); border: 1px solid var(--line); border-radius: 5px; padding: 4px 6px; }
 .cta:disabled { opacity: 0.45; cursor: default; }
 @media (max-width: 480px) { .pcard { min-height: 0; padding: 8px; } .pick-wrap { padding: 14px; } .pick-wrap h2 { font-size: 1.3rem; } }
-/* Auto switch, no text: on = accent track with the knob right and a play icon; off = gray track, knob left, pause icon */
+/* Auto switch, no text: on = accent track with the knob right and a play icon; off = gray track, knob left, pause icon.
+   Squared corners like the other controls; the one in the arena is smaller than the one on the card screen. */
 .autobtn {
+  --sw: 50px; --sh: 28px;
   position: absolute; right: 16px; bottom: 8px; z-index: 5;
-  width: 54px; height: 30px; padding: 0; border: 0; border-radius: 15px; cursor: pointer;
+  width: var(--sw); height: var(--sh); padding: 0; border: 0; border-radius: 7px; cursor: pointer;
   background: var(--line); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 10%, transparent); transition: background .15s ease;
 }
 .autobtn .knob {
-  position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  position: absolute; top: 3px; left: 3px; width: calc(var(--sh) - 6px); height: calc(var(--sh) - 6px); border-radius: 5px; display: grid; place-items: center;
   background: #fff; color: var(--muted); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: transform .15s ease;
 }
-.autobtn .knob svg { width: 10px; height: 10px; fill: currentColor; }
+.autobtn .knob svg { width: calc(var(--sh) * 0.34); height: calc(var(--sh) * 0.34); fill: currentColor; }
+#autoBtn { --sw: 40px; --sh: 22px; }
 .autobtn[aria-pressed="true"] { background: var(--accent); box-shadow: none; }
-.autobtn[aria-pressed="true"] .knob { transform: translateX(24px); color: var(--accent); }
+.autobtn[aria-pressed="true"] .knob { transform: translateX(calc(var(--sw) - var(--sh))); color: var(--accent); }
 .autobtn.inline { position: relative; right: auto; bottom: auto; flex-shrink: 0; display: inline-block; }
 @media (prefers-reduced-motion: reduce) { .autobtn, .autobtn .knob { transition: none; } }
 .autobtn:focus-visible { outline: 2.5px solid var(--bruise); outline-offset: 2px; }
