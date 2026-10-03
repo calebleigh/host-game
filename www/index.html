@@ -633,6 +633,11 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
 .cx-head { width: 100%; display: flex; align-items: center; gap: 10px; font: inherit; color: var(--ink); background: none; border: 0; padding: 11px 12px; cursor: pointer; text-align: left; }
 .cx-head:focus-visible { outline: 2px solid var(--bruise); outline-offset: -2px; }
 .cx-name { font-weight: 700; flex: 1; }
+/* boon and curse icons left of the name (an empty dashed box until it's discovered) */
+.cx-ico { flex: 0 0 auto; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); color: var(--bruise); }
+.cx-ico.curse { color: var(--accent); }
+.cx-ico.unseen { background: transparent; border-style: dashed; }
+.cx-ico svg { width: 15px; height: 15px; }
 .cx-row.locked .cx-name { color: var(--muted); }
 .cx-tag { font-size: 0.75rem; color: var(--muted); }
 .cx-chev { color: var(--muted); transition: transform .15s; }
@@ -2655,7 +2660,10 @@ function renderCodex() {
     const row = document.createElement("div"); row.className = "cx-row" + (e.seen ? "" : " locked") + (codexOpen === e.id ? " open" : "");
     const head = document.createElement("button"); head.type = "button"; head.className = "cx-head";
     head.setAttribute("aria-expanded", codexOpen === e.id);
-    head.innerHTML = '<span class="cx-name">' + (e.seen ? e.name : "???") + '</span><span class="cx-tag">' + ({ Hosts: "Host", Bosses: "Boss", Boons: "Boon", Curses: "Curse", Mutations: "Mutation" })[e.cat] + '</span><span class="cx-chev" aria-hidden="true">▾</span>';
+    const cardKind = e.cat === "Boons" ? "boon" : e.cat === "Curses" ? "curse" : null, cardKey = e.id.split(":")[1];
+    const ico = !cardKind ? "" : '<span class="cx-ico ' + cardKind + (e.seen ? "" : " unseen") + '" aria-hidden="true">' +
+      (e.seen ? "<svg " + ICON_ATTR + ">" + (CARD_ICONS[cardKey] || "") + "</svg>" : "") + "</span>";
+    head.innerHTML = ico + '<span class="cx-name">' + (e.seen ? e.name : "???") + '</span><span class="cx-tag">' + ({ Hosts: "Host", Bosses: "Boss", Boons: "Boon", Curses: "Curse", Mutations: "Mutation" })[e.cat] + '</span><span class="cx-chev" aria-hidden="true">▾</span>';
     head.addEventListener("click", () => { codexOpen = codexOpen === e.id ? null : e.id; renderCodex(); });
     row.appendChild(head);
     if (codexOpen === e.id) {
