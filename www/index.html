@@ -974,7 +974,7 @@ const UP = {
     mod: "regen", eff: (l, m) => signPct(Math.pow(0.85, l) * m.regen - 1) + " healing", text: "Infected hosts regenerate less health" }
 };
 // upgrades with a level cap get steeply pricier near the top, so maxing one is a late-run goal, not a given
-for (const k in UP) if (UP[k].max < 999 && UP[k].k === undefined) UP[k].k = 0.015;
+for (const k in UP) if (UP[k].max < 999) { UP[k].capped = true; if (UP[k].k === undefined) UP[k].k = 0.015; }
 
 const MUT = {
   chain: { name: "Carrier Chain", needs: { bounce: 3, wither: 3 }, base: 1500, g: 2.2, max: 5,
@@ -1040,7 +1040,7 @@ const cardLevelsText = (kind, k) => cardDef(kind, k).v.map((v, i) => "Level " + 
 // permanent upgrades (DNA)
 const PERM = {
   potency:  { name: "Potent genome", text: "Damage on every run", base: 5, g: 1.28, max: 999, eff: l => "×" + fmt(Math.pow(1.2, l)) },
-  yield:    { name: "Rich genome", text: "Lifeforce on every run", base: 5, g: 1.28, max: 999, eff: l => "×" + fmt(Math.pow(1.2, l)) },
+  yield:    { name: "Rich genome", text: "Lifeforce on every run. Upgrades with a level cap cost the same amount more, so this mostly speeds up Virulence, Siphon and mutations", base: 5, g: 1.28, max: 999, eff: l => "×" + fmt(Math.pow(1.2, l)) },
   headstart:{ name: "Head start", text: "Lifeforce you start each run with", base: 10, g: 1.8, max: 15, eff: l => fmt(headStartLf(l)) },
   incubate: { name: "Incubation", text: "Extra stacks on each virus you place", base: 15, g: 2.2, max: 4, eff: l => "+" + l },
   cure:     { needsBoss: 2, name: "Hidden genome", text: "More time before each world's cure lands", base: 12, g: 1.9, max: 10, eff: l => "+" + (10 * l) + "%" },
@@ -1883,7 +1883,9 @@ cv.addEventListener("pointerdown", e => {
 let tab = "potency";
 function upCost(def, l) { return def.base * Math.pow(def.g, l) * Math.pow(1 + (def.k || 0), l * l); }
 // run upgrades get pricier each world, so lifeforce from easy worlds can't buy out the whole tree
-function runCost(def, l) { return upCost(def, l) * Math.pow(COST_GROWTH, R.world - 1); }
+// Capped upgrades also cost more in step with Rich genome, so a big lifeforce boost can't max them all
+// early in every run. Uncapped ones (Virulence, Siphon) and mutations keep the full benefit.
+function runCost(def, l) { return upCost(def, l) * Math.pow(COST_GROWTH, R.world - 1) * (def.capped ? permLf() : 1); }
 function renderTabs() {
   const el = $("tabs"); el.innerHTML = "";
   for (const t of TREES) {
@@ -3091,7 +3093,7 @@ addEventListener("message", e => {
   if (d.input) { const el = mirrorFind(d.input); if (el) { el.value = d.value; el.dispatchEvent(new Event(d.type, { bubbles: true })); } }
   if (d.key) document.dispatchEvent(new KeyboardEvent("keydown", { key: d.key, bubbles: true }));
 });
-window.__host = { get G() { return G; }, get R() { return R; }, get M() { return M; }, showCards, generateWorld, UP, startNewRun, recomputeMods, hostPos, rangePx, renderPanel: () => renderPanel(), step, autoTick, catchUp, buyPerm, PERM, AUTO, upCost,
+window.__host = { get G() { return G; }, get R() { return R; }, get M() { return M; }, showCards, buy, runCost, generateWorld, UP, startNewRun, recomputeMods, hostPos, rangePx, renderPanel: () => renderPanel(), step, autoTick, catchUp, buyPerm, PERM, AUTO, upCost,
   setSilent: v => { silent = v; } };
 requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
 })();
