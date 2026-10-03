@@ -433,12 +433,12 @@ html.rm *, html.rm *::before, html.rm *::after { animation: none !important; tra
 .hud-vir .lives { font-size: 1.1rem; }
 .hud-next { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
 .hud-next.act { color: var(--bruise); }
-.ladder { margin-top: 18px; }
+.ladder { margin-top: 14px; } /* clears the two status lines at the top right */
 @media (max-width: 760px), (orientation: portrait) and (max-width: 1000px) {
   .hud-right { top: 0; }
   .world { padding-right: 130px; }
   .world small { display: block; margin-top: 2px; }
-  .ladder { margin-top: 8px; }
+  .ladder { margin-top: 12px; }
 }
 /* tabs fill the width and wrap onto a second row only when they must */
 .tabs { display: flex; flex-wrap: wrap; }
@@ -532,16 +532,26 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
 .ladder { gap: clamp(3px, 1vw, 5px); padding: 3px 4px; }
 .ladder .zone { display: contents; }
 .ladder .pip.boss { margin: 0 calc(clamp(6px, 2.2vw, 9px) * 0.21); }
+/* world numbers float over the path: the current world and every boss world */
+.ladder { padding-top: 15px; }
+.ladder .step { position: relative; display: inline-flex; align-items: center; }
+.ladder .step[data-n]::before {
+  content: attr(data-n); position: absolute; bottom: calc(100% + 3px); left: 50%; transform: translateX(-50%);
+  font-size: 0.62rem; font-weight: 600; line-height: 1; color: var(--muted); white-space: nowrap;
+}
+.ladder .step.cur::before { color: var(--bruise); font-weight: 800; }
 /* cure countdown: a bar exactly as wide as the zone path, right under it */
 .path-wrap { width: fit-content; max-width: 100%; margin: 0 auto; }
+/* a thin bar with full-size text centered over it; the text spills past the bar, with a halo to stay readable */
 .curebar {
-  position: relative; height: 18px; margin-top: 6px; border-radius: 6px; overflow: hidden;
+  position: relative; height: 8px; margin: 12px 0 6px; border-radius: 4px;
   background: var(--slide); box-shadow: inset 0 0 0 1px var(--line);
 }
-.curebar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: color-mix(in srgb, var(--heal) 45%, transparent); }
+.curebar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: inherit; background: color-mix(in srgb, var(--heal) 60%, transparent); }
 .curebar span {
-  position: relative; display: block; text-align: center; line-height: 18px; white-space: nowrap;
+  position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; line-height: 1; white-space: nowrap;
   font-size: 0.72rem; font-weight: 700; color: var(--ink);
+  text-shadow: 0 0 3px var(--slide), 0 0 3px var(--slide), 0 0 2px var(--slide);
 }
 .curebar.idle { visibility: hidden; }
 .up .eff .buffed { color: var(--bruise); font-weight: 700; cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
@@ -1906,14 +1916,16 @@ function renderLadder() {
       const cls = ["pip"]; if (w === ZONE_SIZE * (z + 1)) cls.push("boss");
       if (w < R.world) cls.push("done"); else if (w === R.world) cls.push("cur");
       if (w > G.best) cls.push("unseen");
-      html += '<i class="' + cls.join(" ") + '"></i>';
+      // little numbers over the current world and every 5th (one right next to the current would crowd it)
+      const n = w === R.world || (w % ZONE_SIZE === 0 && Math.abs(w - R.world) !== 1);
+      html += '<span class="step' + (w === R.world ? " cur" : "") + '"' + (n ? ' data-n="' + w + '"' : "") + '><i class="' + cls.join(" ") + '"></i></span>';
     }
     html += "</span>";
   }
   $("ladder").innerHTML = html;
 }
 function updateHud() {
-  $("worldName").innerHTML = worldTitle(R.world) + " <small>World " + R.world + " of " + FINAL_WORLD + (R.asc ? ", Ascension " + R.asc : "") + "</small>";
+  $("worldName").innerHTML = worldTitle(R.world) + (R.asc ? " <small>Ascension " + R.asc + "</small>" : "");
   renderLadder();
   $("lf").textContent = fmt(R.lf);
   $("dna").textContent = fmt(G.dna);
