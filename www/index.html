@@ -910,7 +910,7 @@ const SHED_STACKS = 3;
 const YIELD = 0.3;
 const BASE_LIVES = 3;
 const worldHp = w => 180 * Math.pow(2.6, w - 1);
-const CURE_BASE = 120, CURE_SHRINK = 1.05, COST_GROWTH = 2.4, DNA_GROWTH = 1.45;
+const CURE_BASE = 120, CURE_SHRINK = 1.05, COST_GROWTH = 2.6, DNA_GROWTH = 1.45;
 
 const TREES = [
   { id: "potency", name: "Potency" },
@@ -923,7 +923,7 @@ const TREES = [
 
 // run upgrades (lifeforce, reset each run)
 const UP = {
-  virulence: { tree: "potency", name: "Virulence", base: 20, g: 1.55, k: 0.025, max: 999,
+  virulence: { tree: "potency", name: "Virulence", base: 20, g: 1.55, k: 0.02, max: 999,
     mod: "dmg", eff: (l, m) => "×" + fmt(Math.pow(1.3, l) * m.dmg), text: "Damage per stack" },
   replication: { tree: "potency", name: "Replication", base: 30, g: 1.7, max: 12,
     mod: "stackSlow", eff: (l, m) => "every " + (3 * Math.pow(0.88, l) * m.stackSlow).toFixed(1) + "s", text: "How fast stacks build on an infected host" },
@@ -958,6 +958,8 @@ const UP = {
   suppress: { tree: "evasion", name: "Suppress", base: 60, g: 1.75, max: 10,
     mod: "regen", eff: (l, m) => signPct(Math.pow(0.85, l) * m.regen - 1) + " healing", text: "Infected hosts regenerate less health" }
 };
+// upgrades with a level cap get steeply pricier near the top, so maxing one is a late-run goal, not a given
+for (const k in UP) if (UP[k].max < 999 && UP[k].k === undefined) UP[k].k = 0.015;
 
 const MUT = {
   chain: { name: "Carrier Chain", needs: { bounce: 3, wither: 3 }, base: 1500, g: 2.2, max: 5,

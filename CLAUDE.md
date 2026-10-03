@@ -108,8 +108,9 @@ Phases (`R.phase`): `idle` (no run), `start` (opening card pick), `pick` (place 
   icons in `CARD_ICONS`), boons first, then curses; tap or hover for what they do.
 
 Current tuning constants (top of the script): `worldHp = 180 * 2.6^(w-1)`, `CURE_BASE 120`, `CURE_SHRINK 1.05`,
-`COST_GROWTH 2.4`, `DNA_GROWTH 1.45`, `YIELD 0.3`, cleanse `0.05 * 1.25^(w-1)`, alert push ramps from 1x in
-world 1 to 3x by world 10. Change one knob at a time and re-run `tools/sim.py`.
+`COST_GROWTH 2.6` (matches host health growth, so lifeforce never gets relatively cheaper), `DNA_GROWTH 1.45`, `YIELD 0.3`, cleanse `0.05 * 1.25^(w-1)`, alert push ramps from 1x in
+world 1 to 3x by world 10. Run upgrades with a level cap get `k: 0.015` (top levels climb steeply, maxing is a late goal);
+Virulence has `k: 0.02`, Siphon `k: 0.03`. Change one knob at a time and re-run `tools/sim.py`.
 
 ## Design rules Caleb has set (keep these unless he changes them)
 
