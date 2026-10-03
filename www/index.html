@@ -525,36 +525,15 @@ html.rm *, html.rm *::before, html.rm *::after { animation: none !important; tra
 .cog-btn:hover { filter: brightness(0.97); color: var(--bruise); }
 .cog-btn:focus-visible { outline: 2.5px solid var(--bruise); outline-offset: 2px; }
 .hud-top { grid-template-columns: auto auto minmax(0, 1fr) auto; }
-/* card icons: boons in a column left of the arena, curses right (top and bottom set in measureHud).
-   Icons shrink to fit (--chip, set in fitCards) instead of wrapping. */
-.cardcol { position: absolute; z-index: 4; pointer-events: none; }
-#cardCol { left: calc(10px + var(--sal)); }
-#cardColR { right: calc(10px + var(--sar)); }
-.lane { display: flex; gap: 5px; }
-.cardcol .lane { flex-direction: column; }
-.cardchip {
-  pointer-events: auto; position: relative; flex: 0 0 auto; width: var(--chip, 30px); height: var(--chip, 30px); padding: 0;
-  display: grid; place-items: center; cursor: help;
-  color: var(--bruise); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--lift);
-}
-.cardchip.curse { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
-.cardchip svg { width: calc(var(--chip, 30px) * 0.53); height: calc(var(--chip, 30px) * 0.53); }
-.cardchip b {
-  position: absolute; right: -5px; bottom: -5px; min-width: 14px; padding: 2px 3px; border-radius: 4px; text-align: center;
-  font-size: 8.5px; line-height: 1; font-weight: 800; letter-spacing: -0.02em; color: #fff; background: var(--tray);
-}
-.cardchip:hover { color: var(--ink); }
-.cardchip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2px; }
-.cardrow { display: none; }
-@media (max-width: 760px), (orientation: portrait) and (max-width: 1000px) {
-  .cardcol { display: none; }
-  /* one line (boons, divider, curses); when that gets too tight it splits into a boons line and a curses line */
-  .cardrow { display: flex; align-items: center; gap: 12px; margin: 0 10px 6px; padding: 2px 6px 7px 2px; }
-  .cardrow:empty { display: none; }
-  .cardrow .lane.curses:not(:first-child) { padding-left: 12px; border-left: 1px solid var(--line); }
-  .cardrow.stacked { flex-direction: column; align-items: flex-start; gap: 9px; }
-  .cardrow.stacked .lane.curses { padding-left: 0; border-left: 0; }
-}
+/* Run tab: one row per boon and curse, with its icon, level, what it does now and what the next level does */
+.runcard { display: flex; gap: 10px; align-items: flex-start; padding: 10px; margin-bottom: 6px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); }
+.runcard .ico { flex: 0 0 auto; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: var(--slide); color: var(--bruise); }
+.runcard.curse .ico { color: var(--accent); }
+.runcard .ico svg { width: 16px; height: 16px; }
+.runcard b { font-size: 0.92rem; }
+.runcard em.lvl { font-style: normal; font-size: 0.72em; font-weight: 800; padding: 1px 6px; margin-left: 4px; border-radius: 4px; background: var(--tray); color: #fff; vertical-align: 2px; }
+.runcard p { margin: 2px 0 0; font-size: 0.84rem; color: var(--ink); }
+.runcard small { display: block; margin-top: 2px; font-size: 0.76rem; color: var(--muted); }
 .foot-btn {
   position: relative; font: inherit; font-weight: 800; font-size: 0.85rem; border: 0; border-radius: 6px; padding: 8px 14px; cursor: pointer; box-shadow: var(--lift);
 }
@@ -702,8 +681,6 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
       </div>
     </div>
     <div class="legend" id="legend"></div>
-    <div class="cardcol" id="cardCol" aria-label="Your boons"></div>
-    <div class="cardcol" id="cardColR" aria-label="Your curses"></div>
     <div class="legend-tip" id="legendTip" role="tooltip"></div>
     <button class="autobtn" id="autoBtn" aria-pressed="true"></button>
     <div class="toast" id="toast" role="status"></div>
@@ -777,7 +754,6 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
         <div>Cure <b id="cure">0%</b></div>
       </div>
     </div>
-    <div class="cardrow" id="cardRow" aria-label="Your boons and curses"></div>
     <div class="tabs" role="tablist" id="tabs"></div>
     <div class="list" id="list" role="tabpanel"></div>
   </aside>
@@ -933,6 +909,7 @@ const TREES = [
   { id: "parasite", name: "Parasite" },
   { id: "evasion", name: "Evasion" },
   { id: "mutations", name: "Mutations" },
+  { id: "run", name: "Run" },
 
 ];
 
@@ -1128,7 +1105,7 @@ const maxLives = () => BASE_LIVES + G.p.lives + M.lives + (isBossWorld(R.world) 
 // ================= canvas & geometry =================
 const cv = $("cv"), ctx = cv.getContext("2d"), stage = $("stage");
 let W = 0, H = 0, DPR = 1;
-const PAD_TOP = 84, PAD_BOT = 40, PAD_X = 22, CARD_COL = 36;
+const PAD_TOP = 84, PAD_BOT = 40, PAD_X = 22;
 function resize() {
   const r = stage.getBoundingClientRect();
   DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -1150,16 +1127,11 @@ function measureHud() {
   if (hud) document.documentElement.style.setProperty("--hud-bottom", Math.round(hud.getBoundingClientRect().bottom) + "px"); // where "Hide host area" stops
   const tops = [$("legend"), $("autoBtn")].map(el => el && el.offsetHeight ? el.getBoundingClientRect().top - sr.top : H).filter(v => v > 0);
   legendTop = tops.length ? Math.min(...tops) : H - PAD_BOT;
-  // the card column runs from under the HUD down to the legend
-  for (const col of [$("cardCol"), $("cardColR")]) if (col) { col.style.top = Math.round(hudBottom + 10) + "px"; col.style.bottom = Math.max(0, Math.round(H - legendTop + 8)) + "px"; }
-  if (R && typeof fitCards === "function") fitCards();
 }
 function field() {
   const m = Math.max(16, Math.min(30, H * 0.06)); // clearance for host radius, rings and labels (hosts are smaller on short arenas)
   const top = hudBottom + m, bottom = (legendTop || H - PAD_BOT) - m;
-  // bigger screens keep room on both sides for the card columns (always, so the map never jumps when a card is added)
-  const col = cardsInPanel() ? 0 : CARD_COL;
-  return { x: PAD_X + 14 + col, y: top, w: Math.max(50, W - (PAD_X + 14 + col) * 2), h: Math.max(50, bottom - top) };
+  return { x: PAD_X + 14, y: top, w: Math.max(50, W - (PAD_X + 14) * 2), h: Math.max(50, bottom - top) };
 }
 // Every world lives in a fixed 1.4 : 1 space, so host layout and distances are the same on any screen.
 // It's scaled uniformly to fit the play field, and turned sideways when the field is taller than wide.
@@ -1942,8 +1914,8 @@ function renderPanel() {
     n.textContent = "Mutations are discovered by leveling two upgrades together, or found on cards.";
     el.appendChild(n);
     for (const k in MUT) el.appendChild(upRow(k, MUT[k], R.mu[k], true));
-  } else if (tab === "strain") {
-    renderStrain(el);
+  } else if (tab === "run") {
+    renderRun(el);
   } else if (tab === "evolve") {
     renderEvolve(el);
   } else {
@@ -1951,12 +1923,6 @@ function renderPanel() {
   }
   if ($("shopOv").classList.contains("show")) renderShop();
   refreshButtons();
-}
-function countList(keys, pool, cls) {
-  if (!keys.length) return '<span class="section-note" style="margin:0">None yet</span>';
-  const counts = {}; keys.forEach(k => counts[k] = (counts[k] || 0) + 1);
-  return Object.entries(counts).map(([k, n]) => '<button type="button" class="chip ' + cls + '" data-tip-title="' + pool[k].name + '" data-tip="' +
-    pool[k].text + (n > 1 ? " (picked " + n + " times, so it stacks)" : "") + '">' + pool[k].name + (n > 1 ? " ×" + n : "") + "</button>").join("");
 }
 // floating explanation card for anything with data-tip (Strain chips)
 function showFloatTip(el) {
@@ -1975,12 +1941,25 @@ document.addEventListener("mouseout", e => { const c = e.target.closest && e.tar
 document.addEventListener("focusin", e => { if (e.target.dataset && e.target.dataset.tip) showFloatTip(e.target); });
 document.addEventListener("focusout", e => { if (e.target.dataset && e.target.dataset.tip) hideFloatTip(); });
 document.addEventListener("click", e => { const c = e.target.closest && e.target.closest("[data-tip]"); if (c) showFloatTip(c); else hideFloatTip(); });
-function renderStrain(el) {
-  el.innerHTML =
-    '<p class="section-note">Run ' + G.runs + ". World " + R.world + ", " + R.kills + " kills, " + fmt(R.dna) + " DNA waiting to be paid out when this run ends. Best world ever: " + G.best + ".</p>" +
-    '<div class="section-title">Boons</div><div style="padding:0 6px">' + countList(R.boons, BOONS, "boon") + "</div>" +
-    '<div class="section-title">Curses</div><div style="padding:0 6px">' + countList(R.curses, CURSES, "curse") + "</div>" +
-    '<p class="section-note">Clear a world to draw cards. Lose all your viruses in one world and the run ends, which is when your DNA is paid out.</p>';
+// the Run tab: everything about this run, including every boon and curse with its level
+const runSummary = () => "Run " + G.runs + ", world " + R.world + " of " + FINAL_WORLD + (R.asc ? " on Ascension " + R.asc : "") + ". " +
+  R.kills + " kills. " + fmt(R.dna) + " DNA waiting, paid out when the run ends. Best world ever: " + G.best + ".";
+function renderRun(el) {
+  const n = document.createElement("p"); n.className = "section-note"; n.id = "runNote"; n.textContent = runSummary();
+  el.appendChild(n);
+  for (const kind of ["boon", "curse"]) {
+    const t = document.createElement("div"); t.className = "section-title"; t.textContent = kind === "boon" ? "Boons" : "Curses"; el.appendChild(t);
+    const keys = [...new Set(kind === "boon" ? R.boons : R.curses)];
+    if (!keys.length) { const e = document.createElement("p"); e.className = "section-note"; e.textContent = "None yet. You pick one of each before the run and after every world you clear."; el.appendChild(e); }
+    for (const k of keys) {
+      const d = cardDef(kind, k), l = cardLevel(kind, k), row = document.createElement("div");
+      row.className = "runcard " + kind;
+      row.innerHTML = '<span class="ico"><svg ' + ICON_ATTR + ">" + (CARD_ICONS[k] || '<circle cx="12" cy="12" r="6"/>') + "</svg></span>" +
+        "<div><b>" + d.name + ' <em class="lvl">' + roman(l) + "</em></b><p>" + cardText(kind, k, l) + "</p><small>" +
+        (l < CARD_MAX ? "Level " + roman(l + 1) + " if picked again: " + cardText(kind, k, l + 1) : "Fully upgraded") + "</small></div>";
+      el.appendChild(row);
+    }
+  }
 }
 function renderEvolve(el) {
   const n = document.createElement("p"); n.className = "section-note";
@@ -2115,7 +2094,7 @@ function updateHud() {
   if (menuOpen && Math.random() < 0.2) refreshMenuStatus();
   updateCountdowns();
   updateAutoBtn();
-  renderCardCol();
+  if (tab === "run" && $("runNote")) $("runNote").textContent = runSummary();
   renderHandle();
   measureHud();
 }
@@ -2371,53 +2350,7 @@ const CARD_ICONS = {
   rushed: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>',
   lean: '<path d="M12 4v15M6 13l6 6 6-6"/>'
 };
-let cardColKey = "";
-// phones show the icons in a row under the overview card; bigger screens show a column down the arena
-const cardsInPanel = () => !!(hudMq && hudMq.matches);
-function renderCardCol() {
-  const key = R.phase + "|" + R.boons.join() + "|" + R.curses.join() + "|" + cardsInPanel();
-  if (key === cardColKey) return; cardColKey = key;
-  $("cardCol").innerHTML = ""; $("cardColR").innerHTML = ""; $("cardRow").innerHTML = "";
-  const el = cardsInPanel() ? $("cardRow") : $("cardCol");
-  if (R.phase === "idle") return;
-  const add = (kind, k) => {
-    const d = cardDef(kind, k), l = cardLevel(kind, k), b = document.createElement("button");
-    b.type = "button"; b.className = "cardchip " + kind;
-    b.innerHTML = "<svg " + ICON_ATTR + ">" + (CARD_ICONS[k] || '<circle cx="12" cy="12" r="6"/>') + "</svg><b>" + roman(l) + "</b>";
-    b.dataset.tipTitle = (kind === "boon" ? "Boon: " : "Curse: ") + d.name + " " + roman(l);
-    b.dataset.tip = cardText(kind, k, l) + "." + (l < CARD_MAX ? " Picking it again " + (kind === "boon" ? "upgrades" : "worsens") + " it to level " + roman(l + 1) + ": " + cardText(kind, k, l + 1) + "." : " Fully upgraded.");
-    b.setAttribute("aria-label", b.dataset.tipTitle + ". " + b.dataset.tip);
-    return b;
-  };
-  const lane = kind => { const l = document.createElement("div"); l.className = "lane " + kind; return l; };
-  const boons = lane("boons"), curses = lane("curses");
-  [...new Set(R.boons)].forEach(k => boons.appendChild(add("boon", k)));
-  [...new Set(R.curses)].forEach(k => curses.appendChild(add("curse", k)));
-  // phones: both lanes in the row under the overview card; bigger screens: boons left of the arena, curses right
-  if (cardsInPanel()) { if (boons.children.length) el.appendChild(boons); if (curses.children.length) el.appendChild(curses); }
-  else { $("cardCol").appendChild(boons); $("cardColR").appendChild(curses); }
-  fitCards();
-}
-// Icons shrink to fit instead of wrapping. On phones the row splits into a boons line and a curses line
-// once everything won't fit on one line at a comfortable size.
-const CHIP_MAX = 30, CHIP_MIN = 18, CHIP_GAP = 5;
-const chipFit = (space, n) => Math.max(CHIP_MIN, Math.min(CHIP_MAX, Math.floor((space - (n - 1) * CHIP_GAP) / Math.max(1, n))));
-function fitCards() {
-  const row = $("cardRow");
-  if (cardsInPanel()) {
-    const lanes = [...row.children], counts = lanes.map(l => l.children.length), n = counts.reduce((a, b) => a + b, 0);
-    if (!n) return;
-    const w = row.clientWidth - 6, one = Math.floor((w - (n - 1) * CHIP_GAP - (lanes.length - 1) * 12) / n);
-    const stacked = one < 24;
-    row.classList.toggle("stacked", stacked);
-    row.style.setProperty("--chip", (stacked ? chipFit(w, Math.max(...counts)) : Math.min(CHIP_MAX, one)) + "px");
-  } else {
-    for (const col of [$("cardCol"), $("cardColR")]) {
-      const n = col.firstChild ? col.firstChild.children.length : 0;
-      if (n) col.style.setProperty("--chip", chipFit(col.clientHeight, n) + "px");
-    }
-  }
-}// phones: the upgrade panel can expand to take most of the screen, or hide down to one bar
+// phones: the upgrade panel can expand to take most of the screen, or hide down to one bar
 function setExpanded(ex) {
   document.querySelector(".app").classList.toggle("expanded", ex);
   renderHandle();
@@ -2641,7 +2574,7 @@ const GUIDE = [
   { scene: "special", title: "Special hosts",
     text: "Curses add special hosts from world 2 on. <b>Healers</b> remove stacks from infected neighbors. <b>Vaccinated</b> hosts can't be infected and don't need to die. <b>Sentinels</b> can't be infected until a neighbor dies. <b>Bosses</b> sit in the middle of every fifth world and must die to clear it." },
   { html: '<div class="g-cards"><div class="pcard boon"><b>Boon</b><span>Helps you for the rest of the run</span></div><div class="pcard curse"><b>Curse</b><span>Makes the run harder</span></div></div>', title: "Cards",
-    text: "Before a run and after every world you clear, you pick one boon and one curse. Both last the whole run. Values a card changes show in the accent color in your upgrades; hover them to see which card did it." },
+    text: "Before a run and after every world you clear, you pick one boon and one curse. Both last the whole run. Values a card changes show in the accent color in your upgrades; hover them to see which card did it. The Run tab lists every card you have." },
   { title: "Lifeforce, DNA and Evolve",
     text: "<b>Lifeforce</b> buys upgrades for this run only. <b>DNA</b> is permanent: you collect it from kills, cleared worlds and bosses, and it's paid out when the run ends. Spend it in <b>Evolve</b> on lasting upgrades and automation." },
   { html: '<div class="g-auto"><span class="autobtn inline" aria-pressed="true"><span class="knob"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1 L11 6 L2 11 Z"/></svg></span></span></div>', title: "Leaving it running",

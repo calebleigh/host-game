@@ -31,8 +31,8 @@ async def run(b, w, h, name, scheme):
         if await pg.evaluate("window.__host.R.phase") == "run": break
     await pg.wait_for_timeout(5000)
     await pg.screenshot(path=str(SHOTS / f"{name}-5-arena.png"))
-    await pg.locator(".cardchip").first.click(); await pg.wait_for_timeout(200)
-    await pg.screenshot(path=str(SHOTS / f"{name}-6-cards.png"))
+    await pg.locator("#tabs .tab", has_text="Run").click(); await pg.wait_for_timeout(200)
+    await pg.screenshot(path=str(SHOTS / f"{name}-6-run.png"))
     # abandon from the main menu (two taps), then Spend DNA on the run summary
     await pg.click("#settingsBtn"); await pg.click("#toMenu"); await pg.wait_for_timeout(200)
     ab = pg.locator(".bar-btn.quiet", has_text="Abandon"); await ab.click(); await ab.click(); await pg.wait_for_timeout(300)
