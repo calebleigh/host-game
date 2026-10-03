@@ -1,0 +1,8 @@
+{
+  "appId": "com.hostgame.app",
+  "appName": "Host",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#150E1A"
+  }
+}

@@ -1,0 +1,2342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Host</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F1DDE3;
+  --slide: #FAF0F3;
+  --cell: #F4CFDA;
+  --membrane: #C9A0B1;
+  --ink: #2B1631;
+  --muted: #7D6574;
+  --stain: #5B2A86;
+  --bruise: #8E1F5E;
+  --life: #C2264B;
+  --husk: #BDB1B7;
+  --panel: #FFF7FA;
+  --line: #E3C9D2;
+  --btn: #5B2A86;
+  --btn-ink: #FFFFFF;
+  --heal: #1F7A6C;
+  --tray: #2E1938;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #150E1A; --slide: #1B1322; --cell: #2E2136; --membrane: #4E3B58;
+    --ink: #F2E4ED; --muted: #A8949F; --stain: #B48CFF; --bruise: #F0629E;
+    --life: #FF5C7A; --husk: #463C4B; --panel: #1F1626; --line: #36283F;
+    --btn: #B48CFF; --btn-ink: #1A1020; --heal: #5FD3BF; --tray: #0D0811;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #150E1A; --slide: #1B1322; --cell: #2E2136; --membrane: #4E3B58;
+  --ink: #F2E4ED; --muted: #A8949F; --stain: #B48CFF; --bruise: #F0629E;
+  --life: #FF5C7A; --husk: #463C4B; --panel: #1F1626; --line: #36283F;
+  --btn: #B48CFF; --btn-ink: #1A1020; --heal: #5FD3BF; --tray: #0D0811;
+}
+*, *::before, *::after { box-sizing: inherit; }
+/* themed scrollbars */
+* { scrollbar-width: thin; scrollbar-color: var(--membrane) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--membrane); border-radius: 10px; border: 3px solid var(--panel); }
+::-webkit-scrollbar-thumb:hover { background: var(--stain); }
+::-webkit-scrollbar-corner { background: transparent; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Bricolage Grotesque", "Segoe UI", system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.app {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  width: 100%; overflow: hidden;
+}
+@media (max-width: 760px), (orientation: portrait) and (max-width: 1000px) {
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(240px, 44%); }
+}
+.stage { position: relative; min-height: 0; min-width: 0; }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: manipulation; }
+.hud {
+  position: absolute; left: 16px; top: 14px; right: 16px;
+  pointer-events: none;
+}
+.world { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; line-height: 1.1; }
+.world small { display: block; margin-top: 2px; font-weight: 400; font-size: 0.95rem; color: var(--muted); letter-spacing: 0; }
+.hint.alert { color: var(--bruise); font-weight: 600; }
+.hint { margin: 4px 0 0; color: var(--muted); font-size: 0.92rem; max-width: 42ch; }
+.legend {
+  position: absolute; left: 16px; bottom: 12px; display: flex; gap: 14px; flex-wrap: wrap;
+  font-size: 0.8rem; color: var(--muted); pointer-events: none;
+}
+.leg {
+  pointer-events: auto; display: inline-flex; align-items: center; gap: 6px;
+  font: inherit; color: inherit; background: none; border: 0; padding: 2px 0; cursor: help;
+  text-decoration: underline dotted; text-underline-offset: 3px; text-decoration-color: var(--line);
+}
+.leg:hover { color: var(--ink); }
+.leg:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2px; border-radius: 3px; }
+.legend-tip {
+  position: absolute; z-index: 6; max-width: 260px; display: none;
+  background: var(--panel); color: var(--muted); border: 1px solid var(--line); border-radius: 8px;
+  padding: 9px 11px; font-size: 0.82rem; line-height: 1.4; pointer-events: none;
+}
+.legend-tip b { display: block; color: var(--ink); margin-bottom: 2px; }
+.legend-tip.show { display: block; }
+.legend i { width: 12px; height: 12px; border-radius: 50%; background: var(--cell); border: 1.5px solid var(--membrane); display: inline-block; }
+.legend i.frail { width: 9px; height: 9px; border-width: 1px; }
+.legend i.sturdy { width: 15px; height: 15px; border-width: 3px; }
+.legend i.carrier { outline: 1.5px dotted var(--stain); outline-offset: 2px; }
+
+.panel {
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  display: flex; flex-direction: column; min-height: 0; min-width: 0;
+}
+@media (max-width: 760px), (orientation: portrait) and (max-width: 1000px) {
+  .panel { border-left: 0; border-top: 1px solid var(--line); }
+}
+.purse { padding: 16px 18px 10px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.lf { font-size: 2.3rem; font-weight: 800; letter-spacing: -0.03em; color: var(--life); font-variant-numeric: tabular-nums; line-height: 1; }
+.lf-label { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+.rate { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.9rem; }
+.rate b { color: var(--ink); font-weight: 600; }
+.tabs { display: flex; gap: 2px; padding: 0 12px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tab {
+  font: inherit; font-size: 0.92rem; background: none; border: 0; color: var(--muted);
+  padding: 10px 10px 9px; cursor: pointer; border-bottom: 2.5px solid transparent; white-space: nowrap;
+}
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--stain); font-weight: 600; }
+.tab .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--bruise); margin-left: 5px; vertical-align: middle; }
+.list { overflow-y: auto; padding: 6px 12px 16px; flex: 1; min-height: 0; }
+.up {
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center;
+  padding: 12px 6px; border-bottom: 1px solid var(--line);
+}
+.up:last-child { border-bottom: 0; }
+.up h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+.up h3 .lvl { font-weight: 400; color: var(--muted); font-size: 0.85rem; margin-left: 6px; font-variant-numeric: tabular-nums; }
+.up p { margin: 0; color: var(--muted); font-size: 0.86rem; grid-column: 1; line-height: 1.35; }
+.up .eff { color: var(--ink); font-variant-numeric: tabular-nums; }
+.buy {
+  grid-row: 1 / span 2; grid-column: 2;
+  font: inherit; font-weight: 600; font-size: 0.9rem; font-variant-numeric: tabular-nums;
+  background: var(--btn); color: var(--btn-ink); border: 0; border-radius: 6px;
+  padding: 9px 12px; min-width: 84px; cursor: pointer;
+}
+.buy:disabled { background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1.5px var(--line); cursor: default; }
+.buy.maxed { box-shadow: none; }
+.up.locked h3 { color: var(--muted); }
+.tab:focus-visible, .buy:focus-visible, .ghost:focus-visible, .cta:focus-visible { outline: 2.5px solid var(--bruise); outline-offset: 2px; }
+.foot { padding: 8px 18px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; color: var(--muted); border-top: 1px solid var(--line); }
+.ghost { font: inherit; background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 4px 0; }
+
+.overlay {
+  position: absolute; inset: 0; display: none; place-items: center; padding: 20px;
+  background: color-mix(in srgb, var(--slide) 70%, transparent);
+}
+.overlay.show { display: grid; }
+#cardsOv, #shopOv, #strainOv { position: fixed; z-index: 20; }
+.shop { display: flex; flex-direction: column; max-width: 560px; overflow: hidden; }
+.shop-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.shop-dna { color: var(--stain); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.shop-list { padding: 0; overflow-y: auto; min-height: 0; flex: 1; border-top: 1px solid var(--line); }
+.ov-text { margin: 0 0 16px; color: var(--muted); line-height: 1.45; }
+.ov-text .stat { display: block; margin-bottom: 4px; }
+.ov-text .stat b { color: var(--ink); }
+.ov-text .stat.small { font-size: 0.85rem; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 24px 26px; max-width: 360px; }
+.card h2 { margin: 0 0 8px; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.card p { margin: 0 0 16px; color: var(--muted); line-height: 1.45; }
+.cta { font: inherit; font-weight: 600; background: var(--btn); color: var(--btn-ink); border: 0; border-radius: 6px; padding: 11px 16px; cursor: pointer; }
+.legend i.vacc { background: var(--slide); border-style: dashed; }
+.legend i.healer { background: var(--heal); border-color: var(--heal); }
+.legend i.boss { width: 15px; height: 15px; border: 2px solid var(--bruise); }
+.legend i.sentinel { border-radius: 2px; border: 2px solid var(--ink); }
+.dna { font-size: 0.95rem; color: var(--stain); font-weight: 600; margin-top: 8px; font-variant-numeric: tabular-nums; }
+.lives { letter-spacing: 3px; color: var(--bruise); }
+.section-note { margin: 12px 6px 2px; color: var(--muted); font-size: 0.85rem; line-height: 1.4; }
+.section-title { margin: 16px 6px 2px; font-size: 0.95rem; font-weight: 800; }
+.chip { display: inline-block; margin: 4px 6px 0 0; padding: 4px 8px; border-radius: 5px; font-size: 0.85rem; border: 1px solid var(--line); }
+.chip.boon { color: var(--stain); border-color: var(--stain); }
+.chip.curse { color: var(--bruise); border-color: var(--bruise); }
+.buy.on { background: var(--heal); color: var(--btn-ink); }
+.pick-wrap { max-width: 660px; width: 100%; max-height: 100%; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+.pick-wrap h2 { margin: 0 0 4px; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; }
+.pick-wrap > p { margin: 0 0 12px; color: var(--muted); }
+.pick-label { font-weight: 600; margin: 12px 0 6px; font-size: 0.95rem; }
+.pick-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.pcard {
+  font: inherit; text-align: left; background: var(--slide); color: var(--ink);
+  border: 1.5px solid var(--line); border-radius: 8px; padding: 10px; cursor: pointer; min-height: 88px;
+}
+.pcard b { display: block; font-size: 0.95rem; margin-bottom: 4px; }
+.pcard span { font-size: 0.82rem; color: var(--muted); line-height: 1.35; display: block; }
+.pcard.boon b { color: var(--stain); }
+.pcard.curse b { color: var(--bruise); }
+.pcard[aria-pressed="true"].boon { border-color: var(--stain); box-shadow: inset 0 0 0 1.5px var(--stain); }
+.pcard[aria-pressed="true"].curse { border-color: var(--bruise); box-shadow: inset 0 0 0 1.5px var(--bruise); }
+.pcard:focus-visible { outline: 2.5px solid var(--bruise); outline-offset: 2px; }
+.pick-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; gap: 10px; }
+.auto-note { color: var(--muted); font-size: 0.85rem; flex: 1; text-align: right; }
+.setting { display: flex; align-items: center; gap: 8px; margin-top: 6px; color: var(--ink); font-size: 0.85rem; }
+.setting select { font: inherit; font-size: 0.85rem; color: var(--ink); background: var(--slide); border: 1px solid var(--line); border-radius: 5px; padding: 4px 6px; }
+.cta:disabled { opacity: 0.45; cursor: default; }
+@media (max-width: 480px) { .pcard { min-height: 0; padding: 8px; } .pick-wrap { padding: 14px; } .pick-wrap h2 { font-size: 1.3rem; } }
+.autobtn {
+  position: absolute; right: 16px; bottom: 8px; z-index: 5;
+  display: inline-flex; align-items: center; gap: 7px;
+  font: inherit; font-size: 0.82rem; font-weight: 600; color: var(--ink);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer;
+}
+.autobtn svg { width: 12px; height: 12px; fill: currentColor; }
+/* on: red with a play icon that gently pulses; paused: gray with a pause icon */
+.autobtn[aria-pressed="true"] { color: var(--bruise); border-color: var(--bruise); }
+.autobtn[aria-pressed="true"] svg { animation: autoPulse 1.6s ease-in-out infinite; transform-origin: 40% 50%; }
+.autobtn[aria-pressed="false"] { color: var(--muted); border-color: var(--line); }
+@keyframes autoPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.55; }
+}
+@media (prefers-reduced-motion: reduce) { .autobtn[aria-pressed="true"] svg { animation: none; } }
+.autobtn:focus-visible { outline: 2.5px solid var(--bruise); outline-offset: 2px; }
+.legend { right: 150px; }
+.ladder { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 10px; margin: 8px 0 2px; }
+.ladder .zone { display: inline-flex; align-items: center; gap: 3px; }
+.ladder .pip { width: 7px; height: 7px; border-radius: 50%; background: var(--line); display: inline-block; }
+.ladder .pip.boss { width: 9px; height: 9px; border-radius: 2px; transform: rotate(45deg); margin: 0 2px; }
+.ladder .pip.done { background: var(--bruise); }
+.ladder .pip.cur { background: var(--panel); box-shadow: 0 0 0 2px var(--bruise); }
+.ladder .pip.unseen:not(.cur) { opacity: 0.5; }
+.world { display: inline-block; pointer-events: auto; cursor: help; }
+.world:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2px; }
+.overlay.top { position: fixed; z-index: 60; }
+#shopOv.from-menu { z-index: 45; }
+.screen {
+  position: fixed; inset: 0; z-index: 40; display: none; overflow-y: auto; background: var(--bg);
+  padding: calc(24px + env(safe-area-inset-top, 0px)) 20px calc(24px + env(safe-area-inset-bottom, 0px));
+}
+.screen.show { display: block; }
+.screen-inner { max-width: 560px; margin: 0 auto; }
+.menu-screen { padding: 0; overflow: hidden auto; }
+#menuBg { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+.menu-layout {
+  position: relative; min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+  gap: 24px; padding: calc(5vh + env(safe-area-inset-top, 0px)) 20px calc(22px + env(safe-area-inset-bottom, 0px));
+}
+.menu-hero { text-align: center; margin: auto 0; width: 100%; max-width: 620px; }
+.menu-screen .wordmark { font-size: clamp(5rem, 19vw, 12rem); margin: 0; text-shadow: 0 6px 0 var(--panel), 0 10px 30px color-mix(in srgb, var(--ink) 25%, transparent); }
+.menu-screen .tagline { margin: 6px 0 22px; font-weight: 600; color: var(--ink); opacity: 0.75; }
+.menu-screen .status { text-align: left; box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 12%, transparent); }
+.menu-bar { width: 100%; max-width: 1180px; display: flex; align-items: stretch; gap: 14px; }
+.side {
+  flex: 0 0 210px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 8px; justify-content: center;
+  box-shadow: inset 0 -4px 0 color-mix(in srgb, var(--ink) 8%, transparent), 0 8px 24px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.side-title { font-weight: 800; font-size: 0.95rem; }
+.menu-stats { color: var(--muted); font-size: 0.82rem; line-height: 1.45; }
+.menu-stats b { color: var(--ink); }
+.asc-row { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; }
+.asc-row select { font: inherit; font-weight: 400; color: var(--ink); background: var(--slide); border: 1px solid var(--line); border-radius: 6px; padding: 5px 6px; flex: 1; min-width: 0; }
+.side-btn { font: inherit; font-weight: 600; background: var(--slide); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 10px; cursor: pointer; }
+.side-btn:hover { border-color: var(--stain); }
+.side-btn.danger { color: var(--muted); font-weight: 400; font-size: 0.85rem; padding: 7px; }
+.main-bar {
+  flex: 1; display: flex; gap: 10px; padding: 10px; border-radius: 16px;
+  background: var(--tray); box-shadow: 0 10px 30px color-mix(in srgb, var(--ink) 25%, transparent);
+}
+.bar-group { display: contents; }
+.bar-btn {
+  flex: 1; font: inherit; font-weight: 800; font-size: 1.15rem; letter-spacing: -0.01em; color: #fff;
+  border: 0; border-radius: 10px; padding: 18px 12px; cursor: pointer; min-height: 64px;
+  box-shadow: inset 0 -5px 0 rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.18);
+  transition: transform .08s ease, filter .08s ease;
+}
+.bar-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.bar-btn:active { transform: translateY(1px); box-shadow: inset 0 -2px 0 rgba(0,0,0,0.25); }
+.bar-btn:focus-visible, .side-btn:focus-visible { outline: 3px solid var(--panel); outline-offset: 2px; }
+.bar-btn.primary { flex: 1.7; font-size: 1.6rem; background: var(--main); }
+.bar-btn.afk { background: var(--accent); }
+.bar-btn.evolve { background: #1F7A6C; }
+.bar-btn.codex { background: #B8742A; }
+.bar-btn.quiet { background: #6E5B68; font-size: 1rem; }
+@media (prefers-reduced-motion: reduce) { .bar-btn { transition: none; } }
+/* medium widths (tablets, wide portrait): button bar stays a row, side panels drop below it */
+@media (max-width: 900px) {
+  .menu-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .main-bar { grid-column: 1 / -1; order: -1; }
+  .side { flex-basis: auto; }
+}
+/* phones: buttons stack full width */
+@media (max-width: 600px) {
+  .main-bar { flex-direction: column; }
+  .bar-btn { min-height: 54px; padding: 14px 12px; }
+  .bar-btn.primary { font-size: 1.4rem; }
+  .menu-screen .wordmark { font-size: clamp(4.5rem, 24vw, 8rem); }
+}
+#intro { z-index: 50; }
+#codex { z-index: 48; }
+.wordmark { font-size: clamp(4rem, 16vw, 7.5rem); font-weight: 800; letter-spacing: -0.06em; line-height: 0.9; margin: 6vh 0 6px; color: var(--ink); }
+.wordmark span { color: var(--bruise); }
+.tagline { color: var(--muted); font-size: 1.1rem; margin: 0 0 28px; }
+.intro-text p { line-height: 1.55; margin: 0 0 14px; color: var(--ink); max-width: 60ch; }
+.status { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; line-height: 1.45; margin-bottom: 14px; }
+.status .away { display: block; margin-top: 8px; color: var(--stain); font-size: 0.9rem; }
+.cta.alt { background: var(--bruise); }
+.codex-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 2vh 0 4px; }
+.codex-head h2 { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+.codex-count { color: var(--stain); font-weight: 600; }
+.cx-sec h3 { font-size: 1rem; margin: 22px 0 8px; }
+.cx-sec h3 span { color: var(--muted); font-weight: 400; font-size: 0.9rem; margin-left: 6px; }
+.cx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.cx { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; font-size: 0.85rem; line-height: 1.35; color: var(--muted); }
+.cx b { display: block; color: var(--ink); margin-bottom: 3px; font-size: 0.92rem; }
+.cx.locked { background: transparent; border-style: dashed; }
+.cx.locked b { color: var(--muted); }
+.toast {
+  position: absolute; left: 50%; bottom: 44px; transform: translateX(-50%);
+  background: var(--ink); color: var(--panel); padding: 9px 14px; border-radius: 6px; font-size: 0.9rem;
+  opacity: 0; transition: opacity .25s; pointer-events: none; white-space: nowrap; max-width: 90%;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+/* ============ chunky, tactile style used across the whole app ============ */
+:root { --lift: inset 0 -4px 0 rgba(0,0,0,0.22), inset 0 2px 0 rgba(255,255,255,0.16); --float: 0 8px 24px color-mix(in srgb, var(--ink) 14%, transparent); }
+.panel { background: var(--bg); }
+.purse {
+  margin: 12px 12px 10px; padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: inset 0 -4px 0 color-mix(in srgb, var(--ink) 7%, transparent);
+}
+.tabs { margin: 0 12px 8px; padding: 5px; gap: 4px; background: var(--tray); border: 0; border-radius: 12px; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { color: rgba(255,255,255,0.7); border: 0; border-radius: 8px; padding: 9px 11px; font-weight: 600; }
+.tab:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.tab[aria-selected="true"] { color: #fff; background: var(--main); box-shadow: var(--lift); border: 0; }
+.tab .dot { background: var(--accent-hi); }
+.list { padding: 2px 12px 14px; }
+.up {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 12px; margin-bottom: 8px;
+  box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.up:last-child { border-bottom: 1px solid var(--line); }
+.up.locked { background: transparent; border-style: dashed; box-shadow: none; }
+.buy, .cta {
+  font-weight: 800; border-radius: 9px; box-shadow: var(--lift); color: #fff; background: var(--main);
+  transition: transform .08s ease, filter .08s ease;
+}
+.buy { padding: 10px 12px; min-width: 88px; }
+.cta { padding: 12px 18px; font-size: 1rem; }
+.buy:not(:disabled):hover, .cta:not(:disabled):hover { transform: translateY(-1px); filter: brightness(1.08); }
+.buy:not(:disabled):active, .cta:not(:disabled):active { transform: translateY(1px); box-shadow: inset 0 -1px 0 rgba(0,0,0,0.25); }
+.buy:disabled { background: var(--slide); color: var(--muted); box-shadow: inset 0 0 0 1.5px var(--line); }
+.buy.maxed { background: transparent; box-shadow: none; }
+.buy.on { background: #1F7A6C; color: #fff; }
+.cta.alt { background: var(--accent); }
+.cta:disabled { opacity: 0.5; }
+.ghost { color: var(--muted); }
+.foot { margin: 0 12px 10px; padding: 8px 12px; border: 0; }
+.menu-foot-btn {
+  font: inherit; font-weight: 800; font-size: 0.85rem; color: #fff; background: var(--tray); border: 0; border-radius: 9px;
+  padding: 8px 12px; cursor: pointer; box-shadow: var(--lift);
+}
+.card, .pick-wrap {
+  border-radius: 16px; border: 1px solid var(--line); background: var(--panel);
+  box-shadow: inset 0 -5px 0 color-mix(in srgb, var(--ink) 7%, transparent), 0 18px 50px color-mix(in srgb, var(--ink) 25%, transparent);
+}
+.overlay { background: color-mix(in srgb, var(--tray) 45%, transparent); }
+.pcard {
+  border-radius: 12px; border: 1.5px solid var(--line); background: var(--slide); padding: 12px;
+  box-shadow: inset 0 -4px 0 color-mix(in srgb, var(--ink) 8%, transparent); transition: transform .08s ease;
+}
+.pcard:hover { transform: translateY(-2px); }
+.pcard.boon { border-top: 5px solid var(--main); }
+.pcard.curse { border-top: 5px solid var(--accent); }
+.pcard[aria-pressed="true"].boon { background: color-mix(in srgb, var(--main) 12%, var(--slide)); border-color: var(--main); box-shadow: inset 0 -4px 0 var(--main); }
+.pcard[aria-pressed="true"].curse { background: color-mix(in srgb, var(--accent) 12%, var(--slide)); border-color: var(--accent); box-shadow: inset 0 -4px 0 var(--accent); }
+.autobtn { border: 0; border-radius: 9px; font-weight: 800; padding: 7px 12px; box-shadow: var(--lift); }
+.autobtn[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.autobtn[aria-pressed="false"] { background: var(--panel); color: var(--muted); box-shadow: inset 0 0 0 1.5px var(--line), inset 0 -3px 0 color-mix(in srgb, var(--ink) 8%, transparent); }
+.legend-tip, .toast { border-radius: 12px; box-shadow: var(--float); }
+.toast { background: var(--tray); color: #fff; }
+.status, .side { border-radius: 14px; }
+.cx { border-radius: 12px; box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--ink) 6%, transparent); padding: 12px; }
+.cx.locked { box-shadow: none; }
+.screen { background: transparent; }
+#fxBg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 39; display: none; }
+#fxBg.show { display: block; }
+#menu.under { visibility: hidden; }
+#settings { z-index: 47; }
+.tabs { flex-wrap: wrap; }
+.screen-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 2vh 0 4px; }
+.screen-head h2 { font-size: 2.4rem; font-weight: 800; letter-spacing: -0.03em; margin: 0; text-shadow: 0 4px 0 var(--panel); }
+.set-group { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 6px 16px; margin: 16px 0;
+  box-shadow: inset 0 -4px 0 color-mix(in srgb, var(--ink) 7%, transparent), var(--float); }
+.set-group h3 { margin: 12px 0 2px; font-size: 1rem; }
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line); }
+.set-group h3 + .set-row { border-top: 0; }
+.set-row p { margin: 0; color: var(--muted); font-size: 0.86rem; line-height: 1.4; }
+.set-row b { display: block; color: var(--ink); font-size: 0.98rem; margin-bottom: 2px; }
+.seg { display: inline-flex; background: var(--tray); border-radius: 10px; padding: 4px; gap: 3px; flex-shrink: 0; }
+.seg button { font: inherit; font-weight: 700; font-size: 0.85rem; color: rgba(255,255,255,0.7); background: none; border: 0; border-radius: 7px; padding: 7px 11px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--main); color: #fff; box-shadow: var(--lift); }
+.seg button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+.cta.danger { background: #B3261E; }
+html.rm *, html.rm *::before, html.rm *::after { animation: none !important; transition: none !important; }
+/* ============ modern pass: tighter corners, flatter depth ============ */
+:root { --lift: inset 0 -2px 0 rgba(0,0,0,0.22); --float: 0 6px 18px color-mix(in srgb, var(--ink) 12%, transparent); }
+.buy, .cta, .menu-foot-btn, .side-btn { border-radius: 6px; }
+.buy:not(:disabled):hover, .cta:not(:disabled):hover { transform: none; filter: brightness(1.1); }
+.bar-btn { border-radius: 8px; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.22); }
+.bar-btn:hover { transform: none; filter: brightness(1.1); }
+.bar-btn:active { transform: translateY(1px); box-shadow: inset 0 -1px 0 rgba(0,0,0,0.22); }
+.main-bar { border-radius: 12px; padding: 8px; gap: 8px; }
+.side, .status, .purse, .set-group { border-radius: 10px; box-shadow: var(--float); }
+.purse { box-shadow: none; }
+.tabs { border-radius: 8px; padding: 4px; }
+.tab { border-radius: 5px; }
+.up { border-radius: 8px; box-shadow: none; }
+.card, .pick-wrap { border-radius: 12px; box-shadow: 0 18px 50px color-mix(in srgb, var(--ink) 22%, transparent); }
+.pcard { border-radius: 8px; box-shadow: none; }
+.pcard:hover { transform: none; border-color: var(--membrane); }
+.pcard.boon { border-top-width: 3px; }
+.pcard.curse { border-top-width: 3px; }
+.pcard[aria-pressed="true"].boon, .pcard[aria-pressed="true"].curse { box-shadow: none; }
+.autobtn { border-radius: 6px; }
+.seg { border-radius: 7px; }
+.seg button { border-radius: 5px; }
+.cx { border-radius: 8px; box-shadow: none; }
+.legend-tip, .toast { border-radius: 8px; }
+.screen-head h2, .menu-screen .wordmark { text-shadow: none; }
+/* top-right run status */
+.toast { white-space: normal; text-align: center; max-width: min(92%, 460px); width: max-content; line-height: 1.4; }
+.hud-right { position: absolute; top: 0; right: 0; text-align: right; line-height: 1.3; }
+.hud-vir { font-size: 1.05rem; }
+.hud-label { font-size: 0.78rem; color: var(--muted); font-weight: 600; letter-spacing: 0.02em; vertical-align: middle; }
+.hud-vir .lives { font-size: 1.1rem; }
+.hud-next { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+.hud-next.act { color: var(--bruise); }
+.ladder { margin-top: 18px; }
+@media (max-width: 760px), (orientation: portrait) and (max-width: 1000px) {
+  .hud-right { top: 0; }
+  .world { padding-right: 130px; }
+  .world small { display: block; margin-top: 2px; }
+  .ladder { margin-top: 8px; }
+}
+/* tabs fill the width and wrap onto a second row only when they must */
+.tabs { display: flex; flex-wrap: wrap; }
+.tabs { gap: 3px; }
+.tab { flex: 1 1 auto; padding: 8px 4px; font-size: 0.78rem; text-align: center; white-space: nowrap; }
+/* ============ phones: give the upgrade list room ============ */
+.panel-handle { display: none; }
+@media (max-width: 760px), (orientation: portrait) and (max-width: 1000px) {
+  .app { grid-template-rows: minmax(0, 1fr) minmax(260px, 52%); transition: grid-template-rows .2s ease; }
+  /* expanded: the panel slides up over the arena instead of squeezing it */
+  .panel { transition: height .2s ease; }
+  .app.expanded .panel {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 80%; z-index: 15;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-radius: 14px 14px 0 0; box-shadow: 0 -12px 36px color-mix(in srgb, var(--ink) 25%, transparent);
+  }
+  .panel-handle {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+    font: inherit; font-size: 0.78rem; font-weight: 600; color: var(--muted); background: none; border: 0; padding: 6px 0 2px; cursor: pointer;
+  }
+  .panel-handle i { width: 36px; height: 4px; border-radius: 2px; background: var(--membrane); }
+  .purse { margin: 4px 10px 6px; padding: 8px 12px; align-items: center; }
+  .lf { font-size: 1.7rem; }
+  .lf-label { display: none; }
+  .dna { margin-top: 2px; font-size: 0.85rem; }
+  .rate { display: grid; grid-template-columns: auto auto; gap: 0 12px; font-size: 0.76rem; text-align: right; }
+  .tabs { margin: 0 10px 6px; }
+  .tab { padding: 7px 4px; font-size: 0.8rem; }
+  .list { padding: 0 10px 10px; }
+  .up { padding: 9px 10px; margin-bottom: 6px; }
+  .up p { font-size: 0.8rem; }
+  .buy { min-width: 76px; padding: 9px 10px; }
+  .foot { margin: 0 10px 6px; padding: 4px 0; }
+}
+/* zone path always fits on one line, shrinking on very narrow screens */
+.ladder { flex-wrap: nowrap; gap: 0 clamp(4px, 2.2vw, 10px); max-width: 100%; overflow: hidden; }
+.ladder .zone { gap: clamp(2px, 0.7vw, 3px); }
+.ladder .pip { width: clamp(4px, 1.7vw, 7px); height: clamp(4px, 1.7vw, 7px); flex-shrink: 0; }
+.ladder .pip.boss { width: clamp(6px, 2.2vw, 9px); height: clamp(6px, 2.2vw, 9px); margin: 0 clamp(1px, 0.5vw, 2px); }
+.ladder .pip.cur { box-shadow: 0 0 0 clamp(1.5px, 0.5vw, 2px) var(--bruise); }
+@media (max-width: 360px) {
+  .tabs { gap: 1px; padding: 3px; margin: 0 8px 6px; }
+  .tabs .tab { font-size: 0.7rem; padding: 6px 2px; letter-spacing: -0.02em; }
+  .foot-btn, .menu-foot-btn { padding: 8px 10px; white-space: nowrap; }
+  .foot-btn.evolve { padding: 8px 12px; }
+  .rate { grid-template-columns: 1fr; font-size: 0.72rem; }
+  .purse .dna { white-space: nowrap; }
+  .world { font-size: 1.25rem; padding-right: 118px; }
+  .hud-next { font-size: 0.75rem; }
+  .hud-vir .lives { font-size: 0.95rem; }
+}
+/* run footer: Strain left, Evolve center, Main menu right */
+.foot { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 0 12px; padding: 12px 0 12px; border-top: 1px solid var(--line); }
+.foot #strainBtn { justify-self: start; }
+.foot #settingsBtn { justify-self: end; }
+.foot-btn {
+  position: relative; font: inherit; font-weight: 800; font-size: 0.85rem; border: 0; border-radius: 6px; padding: 8px 14px; cursor: pointer; box-shadow: var(--lift);
+}
+.foot-btn.strain { background: var(--panel); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line), inset 0 -2px 0 color-mix(in srgb, var(--ink) 8%, transparent); }
+.foot-btn.evolve { background: #1F7A6C; color: #fff; padding: 8px 20px; }
+.foot-btn.evolve.ready::after { content: ""; position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent-hi); box-shadow: 0 0 0 2px var(--bg); }
+.foot-btn:hover, .menu-foot-btn:hover { filter: brightness(1.1); }
+.foot-btn:focus-visible, .menu-foot-btn:focus-visible { outline: 2.5px solid var(--bruise); outline-offset: 2px; }
+@media (max-width: 760px), (orientation: portrait) and (max-width: 1000px) { .foot { margin: 0 10px; padding: 10px 0 8px; } }
+.set-group > .set-row:first-child { border-top: 0; }
+.set-row .cta { white-space: nowrap; flex-shrink: 0; }
+/* settings, codex and how to play use the same sheet as Evolve: header, scrolling body, button always visible */
+.sheet-screen { padding: calc(16px + env(safe-area-inset-top, 0px)) 14px calc(16px + env(safe-area-inset-bottom, 0px)); overflow: hidden; }
+.sheet-screen.show { display: grid; place-items: center; }
+.sheet {
+  position: relative; width: 100%; max-width: 600px; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px);
+  display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 18px 20px 14px; box-shadow: 0 18px 50px color-mix(in srgb, var(--ink) 22%, transparent);
+}
+.sheet.wide { max-width: 760px; }
+.sheet-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.sheet-head h2 { margin: 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; }
+.sheet-body { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 2px 10px; }
+.sheet-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sheet .set-group { background: var(--slide); box-shadow: none; margin: 12px 0; }
+.sheet .wordmark { font-size: clamp(3.2rem, 12vw, 5rem); margin: 12px 0 4px; }
+.sheet .tagline { margin-bottom: 16px; }
+.sheet .cx-sec h3 { margin-top: 16px; }
+@media (max-width: 480px) { .sheet { padding: 14px 14px 12px; } }
+@media (max-width: 480px) { .set-row { flex-wrap: wrap; } .set-row > div:first-child { flex: 1 1 100%; } .set-row .seg, .set-row .cta { margin-left: auto; } }
+.float-tip { position: fixed; z-index: 80; }
+button.chip { font: inherit; font-size: 0.85rem; background: var(--slide); cursor: help; }
+button.chip:hover { filter: brightness(0.97); border-color: currentColor; }
+button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2px; }
+/* evenly spaced path: every world the same gap apart; boss worlds (every 5th) just bigger */
+.ladder { gap: clamp(3px, 1vw, 5px); padding: 3px 4px; }
+.ladder .zone { display: contents; }
+.ladder .pip.boss { margin: 0 calc(clamp(6px, 2.2vw, 9px) * 0.21); }
+.up .eff .buffed { color: var(--bruise); font-weight: 700; cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
+.up .eff .buffed:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2px; border-radius: 3px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; max-width: 250px; }
+.swatch { width: 28px; height: 28px; border-radius: 6px; border: 2px solid transparent; cursor: pointer; padding: 0; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2); }
+.swatch[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--panel) inset; }
+.swatch:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.swatch.custom { position: relative; overflow: hidden; background: conic-gradient(#e33, #ec3, #3c6, #3ae, #93e, #e33); }
+.swatch.custom input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; border: 0; padding: 0; }
+.dna-pending { font-weight: 600; font-size: 0.78rem; color: var(--muted); margin-left: 4px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="stage" id="stage">
+    <canvas id="cv"></canvas>
+    <div class="hud">
+      <h1 class="world" id="worldName" tabindex="0">World 1</h1>
+      <div class="ladder" id="ladder"></div>
+      <div class="hud-right" id="hudRight">
+        <div class="hud-vir"><span class="hud-label">Viruses</span> <b class="lives" id="lives"></b></div>
+        <div class="hud-next" id="hudNext"></div>
+      </div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="legend-tip" id="legendTip" role="tooltip"></div>
+    <button class="autobtn" id="autoBtn" aria-pressed="true"></button>
+    <div class="toast" id="toast" role="status"></div>
+    <div class="overlay top" id="confirm">
+      <div class="card">
+        <h2>Erase everything?</h2>
+        <p>This wipes your DNA, permanent upgrades, automation, bosses, and the Codex, not just the current run.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="cta danger" id="yesReset">Erase all progress</button>
+          <button class="side-btn" id="noReset">Keep my progress</button>
+        </div>
+      </div>
+    </div>
+    <div class="overlay" id="cardsOv">
+      <div class="pick-wrap">
+        <h2 id="cardsTitle">World fallen</h2>
+        <p id="cardsText">Pick one boon and one curse. Both last for the rest of this run.</p>
+        <div class="pick-label">Boons</div>
+        <div class="pick-row" id="boonRow"></div>
+        <div class="pick-label" id="curseLabel">Curses</div>
+        <div class="pick-row" id="curseRow"></div>
+        <div class="pick-actions">
+          <button class="ghost" id="rerollBtn">Reroll</button>
+          <span class="auto-note" id="cardsAuto"></span>
+          <button class="cta" id="cardsGo" disabled>Continue</button>
+        </div>
+      </div>
+    </div>
+    <div class="overlay" id="shopOv">
+      <div class="pick-wrap shop">
+        <div class="shop-head">
+          <h2>Evolve</h2>
+          <div class="shop-dna"><span id="shopDna">0</span> DNA</div>
+        </div>
+        <div class="list shop-list" id="shopList"></div>
+        <div class="pick-actions">
+          <span class="auto-note" id="shopNote" style="text-align:left"></span>
+          <button class="cta" id="shopGo">Start next run</button>
+        </div>
+      </div>
+    </div>
+    <div class="overlay" id="strainOv">
+      <div class="pick-wrap shop">
+        <div class="shop-head"><h2>Strain</h2></div>
+        <div class="list shop-list" id="strainList"></div>
+        <div class="pick-actions"><button class="cta danger" id="strainAbandon">Abandon run</button><button class="cta" id="strainClose">Close</button></div>
+      </div>
+    </div>
+    <div class="overlay" id="overlay">
+      <div class="card">
+        <h2 id="ovTitle">World fallen</h2>
+        <div id="ovText" class="ov-text"></div>
+        <button class="cta" id="ovBtn">Continue</button>
+      </div>
+    </div>
+  </div>
+  <aside class="panel">
+    <button class="panel-handle" id="panelHandle" aria-expanded="false"><i></i><span>Expand upgrades</span></button>
+    <div class="purse">
+      <div>
+        <div class="lf" id="lf">0</div>
+        <div class="lf-label">Lifeforce</div>
+        <div class="dna"><span id="dna">0</span> DNA <span class="dna-pending" id="dnaPending"></span></div>
+      </div>
+      <div class="rate">
+        <div><b id="rate">0</b> per second</div>
+        <div><b id="hostsLeft">0</b> hosts standing</div>
+        <div>Immune alert <b id="alert">0%</b></div>
+        <div>Cure <b id="cure">0%</b></div>
+      </div>
+    </div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="list" id="list" role="tabpanel"></div>
+    <div class="foot">
+      <button class="foot-btn strain" id="strainBtn">Strain</button>
+      <button class="foot-btn evolve" id="evolveBtn">Evolve</button>
+      <button class="menu-foot-btn" id="settingsBtn">Settings</button>
+    </div>
+  </aside>
+</div>
+<div class="legend-tip float-tip" id="floatTip" role="tooltip"></div>
+<canvas id="fxBg" aria-hidden="true"></canvas>
+<div class="screen sheet-screen" id="intro">
+  <div class="sheet">
+    <div class="sheet-head"><h2>How to play</h2></div>
+    <div class="sheet-body">
+      <div class="wordmark">Host<span>.</span></div>
+      <p class="tagline">An idle game about being the worst thing that ever happened to a planet.</p>
+      <div class="intro-text">
+        <p>You are a virus. Get into one host, drain its lifeforce, and spread to the next. Spend what you drain on upgrades: more damage, longer jumps, stranger mutations.</p>
+        <p>Each world fights back with an immune system and a race to a cure. Lose all your viruses and the run ends, but the DNA you earned stays and makes every future run stronger.</p>
+        <p>Clear five zones, from a petri dish to the whole planet. A boss guards the end of each one. Kill Patient Omega and the world is yours.</p>
+        <p>You can play every choice yourself, or leave it running. Anything you don't decide gets decided for you, and it keeps playing while you're away.</p>
+      </div>
+    </div>
+    <div class="sheet-foot"><span></span><button class="cta" id="introGo">Begin</button></div>
+  </div>
+</div>
+<div class="screen menu-screen" id="menu">
+  <div class="menu-layout">
+    <div class="menu-hero">
+      <div class="wordmark">Host<span>.</span></div>
+      <p class="tagline">From a petri dish to the whole planet.</p>
+      <div class="status" id="menuStatus"></div>
+    </div>
+    <div class="menu-bar">
+      <div class="side side-left">
+        <div class="side-title">Strain</div>
+        <div class="menu-stats" id="menuStats"></div>
+        <div class="asc-row" id="ascRow">
+          <label for="ascSel">Difficulty</label>
+          <select id="ascSel" title="Each Ascension level: hosts +25% health, cure 8% sooner, +35% DNA. Applies to your next run."></select>
+        </div>
+      </div>
+      <div class="main-bar">
+        <div class="bar-group" id="menuActions"></div>
+        <button class="bar-btn evolve" id="mEvolve">Evolve</button>
+        <button class="bar-btn codex" id="mCodex">Codex</button>
+      </div>
+      <div class="side side-right">
+        <button class="side-btn" id="mHow">How to play</button>
+        <button class="side-btn" id="mSettings">Settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="screen sheet-screen" id="settings">
+  <div class="sheet">
+    <div class="sheet-head"><h2>Settings</h2></div>
+    <div class="sheet-body">
+    <div class="set-group">
+      <div class="set-row"><div><b>Main menu</b><p id="menuRowNote">Leave the arena for the main menu. Your run keeps its place.</p></div><button class="cta" id="toMenu">Main menu</button></div>
+    </div>
+    <div class="set-group">
+      <h3>Gameplay</h3>
+      <div class="set-row"><div><b>Auto-choose</b><p>Undecided choices get made for you after a short wait, so runs keep going while you're away.</p></div><div class="seg" data-set="autoChoose"></div></div>
+      <div class="set-row"><div><b>Floating numbers</b><p>Lifeforce popups when hosts die, plus "cured" and "flare" labels.</p></div><div class="seg" data-set="floats"></div></div>
+    </div>
+    <div class="set-group">
+      <h3>Display</h3>
+      <div class="set-row"><div><b>Theme</b><p>System follows your device's light or dark mode.</p></div><div class="seg" data-set="theme"></div></div>
+      <div class="set-row" id="fsRow"><div><b>Full screen</b><p>Hide the browser's bars. Swipe or press Esc to leave.</p></div><button class="cta" id="fsBtn">Go full screen</button></div>
+      <div class="set-row"><div><b>Main color</b><p>Tints the whole app: backgrounds, panels, cells, and borders.</p></div><div class="swatches" data-color="main"></div></div>
+      <div class="set-row"><div><b>Accent color</b><p>Buttons, tabs, boons, and the virus itself.</p></div><div class="swatches" data-color="accent"></div></div>
+      <div class="set-row"><div><b>Reset colors</b><p>Back to rose and purple.</p></div><button class="side-btn" id="resetColors">Reset</button></div>
+      <div class="set-row"><div><b>Animations</b><p>Reduced stops pulsing cells, the menu background, and button motion.</p></div><div class="seg" data-set="motion"></div></div>
+    </div>
+    <div class="set-group">
+      <h3>Data</h3>
+      <div class="set-row"><div><b>Saving</b><p id="saveNote">Progress saves automatically in this browser.</p></div></div>
+      <div class="set-row"><div><b>Erase all progress</b><p>Wipes DNA, upgrades, bosses, the Codex, and the current run. This can't be undone.</p></div><button class="cta danger" id="mErase">Erase</button></div>
+    </div>
+    </div>
+    <div class="sheet-foot"><span></span><button class="cta" id="settingsBack">Back</button></div>
+  </div>
+</div>
+<div class="screen sheet-screen" id="codex">
+  <div class="sheet wide">
+    <div class="sheet-head"><h2>Codex</h2><span class="codex-count" id="codexCount"></span></div>
+    <div class="sheet-body" id="codexList"></div>
+    <div class="sheet-foot"><span></span><button class="cta" id="codexBack">Back</button></div>
+  </div>
+</div>
+
+
+<script>
+(() => {
+"use strict";
+
+// ================= helpers =================
+const $ = id => document.getElementById(id);
+const SUFFIX = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+function fmt(n) {
+  if (!isFinite(n)) return "∞";
+  if (n < 10) return (Math.round(n * 10) / 10).toString();
+  if (n < 1000) return Math.floor(n).toString();
+  const e = Math.floor(Math.log10(n) / 3);
+  if (e < SUFFIX.length) {
+    const v = n / Math.pow(1000, e);
+    return (v < 100 ? v.toFixed(v < 10 ? 2 : 1) : Math.floor(v)) + SUFFIX[e];
+  }
+  return n.toExponential(2);
+}
+const pct = x => Math.round(x * 100) + "%";
+const signPct = x => (x < -0.004 ? "−" : "+") + Math.round(Math.abs(x) * 100) + "%";
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+const sysReduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+let reduceMotion = sysReduce;
+function fmtTime(s) { s = Math.floor(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return h ? h + "h " + m + "m" : m + "m " + (s % 60) + "s"; }
+
+// ================= static data =================
+// The campaign: 25 worlds in 5 zones, growing from a petri dish to the whole planet.
+// The fifth world of every zone is a boss.
+const FINAL_WORLD = 25, ZONE_SIZE = 5;
+const ZONES = [
+  { name: "Petri Dish", boss: "Colony Prime", bossText: "A giant colony. It regrows three times as fast while infected.", hp: 10, reward: "Unlocks Spare virus in Evolve" },
+  { name: "Village", boss: "The Herbalist", bossText: "A giant healer whose reach covers a huge part of the map. Infecting it stops the healing.", hp: 12, reward: "Unlocks Second look in Evolve" },
+  { name: "Town", boss: "The Quarantine", bossText: "Can't be infected until 40% of the town has fallen.", hp: 14, reward: "Unlocks Hidden genome in Evolve" },
+  { name: "City", boss: "The Doctor", bossText: "Every 8 seconds, cures every infection close to it. It never cures itself.", hp: 16, reward: "Adds two new boons to the card pool" },
+  { name: "Planet", boss: "Patient Omega", bossText: "The last host. Enormous, and its immune system learns twice as fast.", hp: 24, reward: "Victory, and Ascension unlocks" }
+];
+const zoneOf = w => Math.min(ZONES.length - 1, Math.floor((w - 1) / ZONE_SIZE));
+const isBossWorld = w => w % ZONE_SIZE === 0;
+const worldTitle = w => isBossWorld(w) ? ZONES[zoneOf(w)].boss : ZONES[zoneOf(w)].name;
+const TYPES = {
+  frail:   { hp: 0.45, yield: 1.0, size: 0.74, stroke: 1 },
+  common:  { hp: 1.0,  yield: 1.0, size: 1.0,  stroke: 1.6 },
+  sturdy:  { hp: 2.6,  yield: 1.2, size: 1.28, stroke: 3.2 }
+};
+const SHED_STACKS = 3;
+const YIELD = 0.3;
+const BASE_LIVES = 3;
+const worldHp = w => 180 * Math.pow(2.6, w - 1);
+const CURE_BASE = 120, CURE_SHRINK = 1.05, COST_GROWTH = 2.4, DNA_GROWTH = 1.45;
+
+const TREES = [
+  { id: "potency", name: "Potency" },
+  { id: "spread", name: "Spread" },
+  { id: "parasite", name: "Parasite" },
+  { id: "evasion", name: "Evasion" },
+  { id: "mutations", name: "Mutations" },
+
+];
+
+// run upgrades (lifeforce, reset each run)
+const UP = {
+  virulence: { tree: "potency", name: "Virulence", base: 20, g: 1.55, k: 0.025, max: 999,
+    mod: "dmg", eff: (l, m) => "×" + fmt(Math.pow(1.3, l) * m.dmg), text: "Damage per stack" },
+  replication: { tree: "potency", name: "Replication", base: 30, g: 1.7, max: 12,
+    mod: "stackSlow", eff: (l, m) => "every " + (3 * Math.pow(0.88, l) * m.stackSlow).toFixed(1) + "s", text: "How fast stacks build on an infected host" },
+  stacking: { tree: "potency", name: "Stacking", base: 60, g: 1.9, max: 10,
+    eff: l => (5 + 3 * l) + " stacks", text: "Max stacks per host" },
+  wither: { tree: "potency", name: "Wither", base: 120, g: 1.8, max: 15,
+    eff: l => l === 0 ? "off" : "+" + (4 * l) + "%/s, up to ×" + (1 + l), text: "Damage grows the longer a host is infected" },
+  tempo: { tree: "potency", name: "Tempo", base: 150, g: 2.0, max: 10,
+    eff: l => (0.5 * Math.pow(0.88, l)).toFixed(2) + "s", text: "Time between damage ticks" },
+
+  bounce: { tree: "spread", name: "Bounce", base: 45, g: 1.75, max: 15,
+    mod: "bounceSpeed", eff: (l, m) => pct(bounceChance(l)) + " chance every " + (8 * Math.pow(0.88, l) / m.bounceSpeed).toFixed(1) + "s",
+    text: "Hosts with " + SHED_STACKS + "+ stacks already try to jump to the nearest healthy host. This makes them try harder" },
+  reach: { tree: "spread", name: "Reach", base: 100, g: 1.7, max: 12,
+    mod: "range", eff: (l, m) => Math.round((1 + 0.12 * l) * m.range * 100) + "% reach", text: "How far a bounce can travel, compared to normal" },
+  split: { tree: "spread", name: "Split", base: 400, g: 1.9, max: 8,
+    mod: "split", eff: (l, m) => pct(Math.min(0.85, 0.08 * l + m.split)), text: "Chance a bounce also hits a second host" },
+  contagion: { tree: "spread", name: "Contagion", base: 300, g: 2.1, max: 5,
+    mod: "contagion", eff: (l, m) => (2 + l + m.contagion) + " hosts", text: "When a host dies, this many nearby healthy hosts catch it" },
+
+  siphon: { tree: "parasite", name: "Siphon", base: 25, g: 1.6, k: 0.03, max: 999,
+    mod: "lf", eff: (l, m) => "×" + fmt(Math.pow(1.2, l) * m.lf), text: "Lifeforce gained per point of damage" },
+  harvest: { tree: "parasite", name: "Harvest", base: 80, g: 1.8, max: 10,
+    mod: "harvest", eff: (l, m) => "+" + Math.round((10 + 15 * l) * m.harvest) + "% of its health", text: "Bonus lifeforce when a host dies" },
+  linger: { tree: "parasite", name: "Linger", base: 300, g: 1.9, max: 6,
+    eff: l => l === 0 ? "off" : "−" + (8 * l) + "% dmg, +" + (30 * l) + "% yield", text: "Hosts under 25% health die slower but pay out more" },
+
+  stealth: { tree: "evasion", name: "Stealth", base: 50, g: 1.75, max: 10,
+    eff: l => "−" + pct(1 - Math.pow(0.88, l)) + " cleansing", text: "Immune system removes stacks less often" },
+  shapeshift: { tree: "evasion", name: "Shapeshift", base: 90, g: 1.8, max: 10,
+    mod: "adapt", eff: (l, m) => signPct((1 + 0.15 * l) * m.adapt - 1) + " learning time", text: "How long each host's immune system takes to learn the virus" },
+  suppress: { tree: "evasion", name: "Suppress", base: 60, g: 1.75, max: 10,
+    mod: "regen", eff: (l, m) => signPct(Math.pow(0.85, l) * m.regen - 1) + " healing", text: "Infected hosts regenerate less health" }
+};
+
+const MUT = {
+  chain: { name: "Carrier Chain", needs: { bounce: 3, wither: 3 }, base: 1500, g: 2.2, max: 5,
+    eff: l => pct(0.25 + 0.15 * l) + " of stacks", text: "New infections from a bounce carry over stacks from their source" },
+  spores: { name: "Spore Burst", needs: { split: 3, contagion: 2 }, base: 3000, g: 2.3, max: 5,
+    eff: l => "+" + l + " host" + (l > 1 ? "s" : "") + ", " + (2 * l) + " stacks", text: "Dying hosts burst into extra infections that start strong" },
+  flare: { name: "Flare", needs: { siphon: 3, stealth: 3 }, base: 2000, g: 2.2, max: 5,
+    eff: l => (2 + l) + "s of damage every 10s", text: "The virus goes quiet, then hits all hosts at once" },
+  necrosis: { name: "Necrosis", needs: { virulence: 3, linger: 2 }, base: 2500, g: 2.3, max: 5,
+    eff: l => "+" + l + " stack" + (l > 1 ? "s" : "") + " past cap", text: "Each death feeds stacks to infected hosts nearby" }
+};
+
+// cards
+const BOONS = {
+  virulent:  { name: "Virulent strain", text: "+40% damage", w: 3, apply: m => { m.dmg *= 1.4; } },
+  richblood: { name: "Rich blood", text: "+40% lifeforce", w: 3, apply: m => { m.lf *= 1.4; } },
+  spare:     { name: "Spare strain", text: "+1 virus every world", w: 1, apply: m => { m.lives += 1; } },
+  longreach: { name: "Long reach", text: "Bounces reach 30% farther", w: 2, apply: m => { m.range *= 1.3; } },
+  twin:      { name: "Twin jump", text: "+25% chance a bounce hits two hosts", w: 2, apply: m => { m.split += 0.25; } },
+  slippery:  { name: "Slippery coat", text: "Immune systems learn the virus 30% slower", w: 2, apply: m => { m.adapt *= 1.3; } },
+  hotstart:  { name: "Hot start", text: "Every new infection starts with +2 stacks", w: 2, apply: m => { m.startStacks += 2; } },
+  bloom:     { name: "Corpse bloom", text: "Every death infects 1 more nearby host", w: 2, apply: m => { m.contagion += 1; } },
+  feast:     { name: "Feast", text: "Kills pay double bonus lifeforce", w: 2, apply: m => { m.harvest *= 2; } },
+  frenzy:    { name: "Frenzy", text: "Infected hosts try to bounce 30% more often", w: 2, apply: m => { m.bounceSpeed *= 1.3; } },
+  superspread: { needsBoss: 3, name: "Superspreader", text: "Every successful bounce also hits a second host", w: 1, apply: m => { m.split += 1; } },
+  necrobloom:  { needsBoss: 3, name: "Necrotic bloom", text: "Every death infects 2 more nearby hosts", w: 1, apply: m => { m.contagion += 2; } },
+  masked:    { name: "Masked", text: "The cure takes 30% longer", w: 2, apply: m => { m.cure *= 1.3; } },
+  windfall:  { name: "Windfall", text: "Double your current lifeforce right now", w: 2, once: () => { R.lf *= 2; } },
+  mutagen:   { name: "Mutagen", text: "Gain a random mutation at level 1", w: 1, once: () => {
+    const opts = Object.keys(MUT).filter(k => R.mu[k] < MUT[k].max);
+    if (!opts.length) return;
+    const k = opts[Math.floor(Math.random() * opts.length)];
+    R.found[k] = true; G.seen.muts[k] = true; R.mu[k] = Math.max(1, R.mu[k] + (R.mu[k] ? 1 : 0));
+  } }
+};
+const CURSES = {
+  cold:       { name: "Cold snap", text: "Stacks build 30% slower", w: 2, pain: 2, apply: m => { m.stackSlow *= 1.3; } },
+  fever:      { name: "Fever", text: "Hosts heal twice as fast", w: 2, pain: 2, apply: m => { m.regen *= 2; } },
+  vigilant:   { name: "Vigilant", text: "Immune systems learn the virus 25% faster", w: 2, pain: 3, apply: m => { m.adapt *= 0.8; } },
+  vaccinated: { name: "Vaccinated", text: "12% of hosts can't be infected", w: 2, pain: 2, apply: m => { m.vacc += 0.12; } },
+  healers:    { name: "Healers", text: "Some hosts remove stacks from infected neighbors", w: 2, pain: 3, apply: m => { m.healers += 0.08; } },
+  sentinels:  { name: "Sentinels", text: "Some hosts resist until a neighbor dies", w: 2, pain: 2, apply: m => { m.sentinels += 0.12; } },
+  hardy:      { name: "Hardy stock", text: "Hosts have 35% more health", w: 2, pain: 1, apply: m => { m.hp *= 1.35; } },
+  scattered:  { name: "Scattered", text: "Hosts spread out, with fewer clusters", w: 2, pain: 2, apply: m => { m.scatter += 1; } },
+  thinair:    { name: "Thin air", text: "Bounces reach 20% less far", w: 2, pain: 3, apply: m => { m.range *= 0.8; } },
+  alarm:      { name: "Alarm", text: "Each kill raises the immune alert twice as much", w: 2, pain: 2, apply: m => { m.alert *= 2; } },
+  rushed:     { name: "Crash program", text: "The cure arrives 20% sooner", w: 2, pain: 3, apply: m => { m.cure *= 0.8; } },
+  lean:       { name: "Lean times", text: "−25% lifeforce", w: 2, pain: 1, apply: m => { m.lf *= 0.75; } }
+};
+
+// permanent upgrades (DNA)
+const PERM = {
+  potency:  { name: "Potent genome", text: "Damage on every run", base: 5, g: 1.28, max: 999, eff: l => "×" + fmt(Math.pow(1.2, l)) },
+  yield:    { name: "Rich genome", text: "Lifeforce on every run", base: 5, g: 1.28, max: 999, eff: l => "×" + fmt(Math.pow(1.2, l)) },
+  headstart:{ name: "Head start", text: "Lifeforce you start each run with", base: 10, g: 1.8, max: 15, eff: l => fmt(headStartLf(l)) },
+  incubate: { name: "Incubation", text: "Extra stacks on each virus you place", base: 15, g: 2.2, max: 4, eff: l => "+" + l },
+  cure:     { needsBoss: 2, name: "Hidden genome", text: "More time before each world's cure lands", base: 12, g: 1.9, max: 10, eff: l => "+" + (10 * l) + "%" },
+  lives:    { needsBoss: 0, name: "Spare virus", text: "Extra viruses every world", base: 60, g: 5, max: 2, eff: l => "+" + l },
+  reroll:   { needsBoss: 1, name: "Second look", text: "Card rerolls every world", base: 20, g: 3, max: 3, eff: l => l + " reroll" + (l === 1 ? "" : "s") }
+};
+const AUTO = {
+  autoBuy:  { name: "Auto-evolve", text: "Buys run upgrades for you as lifeforce comes in.", cost: 15, needs: 2, toggle: true,
+    settings: [{ key: "buyFocus", label: "Favor", opts: [["balanced", "Balanced"], ["spread", "Spread"], ["potency", "Potency"], ["parasite", "Parasite"], ["evasion", "Evasion"]] }] },
+  instinct: { name: "Instinct", text: "Lets you choose how viruses get placed automatically.", cost: 40, needs: 3,
+    settings: [{ key: "placeStyle", label: "Place on", opts: [["easy", "Easiest targets"], ["dense", "Densest cluster"], ["payout", "Biggest payout"], ["healers", "Far from healers"], ["carriers", "Near carriers"]] }] },
+  doctrine: { name: "Doctrine", text: "Lets you choose how cards get picked automatically.", cost: 80, needs: 4,
+    settings: [
+      { key: "boonFocus", label: "Boons", opts: [["balanced", "Rarest first"], ["spread", "Spread"], ["damage", "Damage"], ["lifeforce", "Lifeforce"], ["survival", "Survival"]] },
+      { key: "curseRule", label: "Curses", opts: [["mildest", "Mildest"], ["noMap", "Avoid map changes"], ["noImmune", "Avoid immune boosts"]] }] },
+  reflexes: { name: "Reflexes", text: "Automatic choices happen after 1 second instead of 15.", cost: 150, needs: 5, toggle: true }
+};
+const DEFAULT_SETTINGS = { main: "#D6336C", accent: "#6A2FA0", theme: "system", motion: "full", floats: true, autoChoose: true, buyFocus: "balanced", placeStyle: "easy", boonFocus: "balanced", curseRule: "mildest" };
+const BOON_TAGS = { longreach: "spread", twin: "spread", bloom: "spread", frenzy: "spread", virulent: "damage", hotstart: "damage", mutagen: "damage",
+  richblood: "lifeforce", feast: "lifeforce", windfall: "lifeforce", spare: "survival", slippery: "survival", masked: "survival" };
+const MAP_CURSES = ["vaccinated", "healers", "sentinels", "scattered"], IMMUNE_CURSES = ["vigilant", "fever", "rushed", "alarm"];
+function headStartLf(l) { return l ? 60 * l * Math.pow(1.5, l) : 0; }
+
+// ================= state =================
+// G = permanent meta, R = current run
+let G, R, M;
+function newMeta() {
+  const p = {}; for (const k in PERM) p[k] = 0;
+  const a = {}; for (const k in AUTO) a[k] = { owned: false, on: true };
+  return { dna: 0, dnaTotal: 0, best: 1, runs: 0, p, auto: a, settings: Object.assign({}, DEFAULT_SETTINGS), savedAt: Date.now(),
+    bosses: {}, wins: 0, ascMax: 0, asc: 0, colorsV2: true, seen: { hosts: {}, bosses: {}, boons: {}, curses: {}, muts: {} } };
+}
+function newRun() {
+  const lv = {}; for (const k in UP) lv[k] = 0;
+  const mu = {}; for (const k in MUT) mu[k] = 0;
+  G.runs++;
+  R = { world: 1, lf: headStartLf(G.p.headstart), lv, mu, found: {}, boons: [], curses: [], seed: Math.floor(Math.random() * 1e9),
+    hosts: [], phase: "pick", cure: 0, elapsed: 0, asc: G.asc, victory: false, bestBefore: G.best, stage: null, shopHold: false, lives: 0, flareT: 0, kills: 0, dna: 0, offer: null, rerolls: 0, autoT: 0, lastPz: -1 };
+  recomputeMods();
+  R.lives = maxLives();
+  R.rerolls = G.p.reroll;
+  generateWorld();
+  // every run opens with a free boon
+  R.phase = "start";
+  R.offer = makeOffer();
+  R.pickB = null; R.pickC = null; R.touched = false; R.autoT = 0;
+}
+function chooseStart(b, c) {
+  R.boons.push(b); R.curses.push(c);
+  if (BOONS[b].once) BOONS[b].once();
+  recomputeMods();
+  generateWorld(); // so curses like Scattered or Healers shape world 1
+  R.lives = maxLives();
+  R.offer = null;
+  R.phase = "pick"; R.autoT = 0;
+  if (!silent) { $("cardsOv").classList.remove("show"); renderTabs(); renderPanel(); updateHud(); save(); }
+}
+const neutralMods = () => ({ dmg: 1, lf: 1, lives: 0, range: 1, split: 0, adapt: 1, startStacks: 0, contagion: 0, harvest: 1, bounceSpeed: 1,
+  stackSlow: 1, regen: 1, cure: 1, vacc: 0, healers: 0, sentinels: 0, hp: 1, scatter: 0, alert: 1 });
+const NEUTRAL = neutralMods();
+// which cards touch which modifier (found by applying each card to a neutral set)
+function cardsAffecting(key) {
+  const out = [];
+  const count = {}; R.boons.forEach(k => count["b:" + k] = (count["b:" + k] || 0) + 1); R.curses.forEach(k => count["c:" + k] = (count["c:" + k] || 0) + 1);
+  for (const id in count) {
+    const [t, k] = id.split(":"), def = t === "b" ? BOONS[k] : CURSES[k];
+    if (!def.apply) continue;
+    const m = neutralMods(); def.apply(m);
+    if (m[key] !== NEUTRAL[key]) out.push((t === "b" ? "Boon" : "Curse") + ", " + def.name + (count[id] > 1 ? " ×" + count[id] : "") + ": " + def.text);
+  }
+  return out;
+}
+function recomputeMods() {
+  M = { dmg: 1, lf: 1, lives: 0, range: 1, split: 0, adapt: 1, startStacks: 0, contagion: 0, harvest: 1, bounceSpeed: 1,
+        stackSlow: 1, regen: 1, cure: 1, vacc: 0, healers: 0, sentinels: 0, hp: 1, scatter: 0, alert: 1 };
+  for (const k of R.boons) if (BOONS[k].apply) BOONS[k].apply(M);
+  for (const k of R.curses) CURSES[k].apply(M);
+}
+const maxLives = () => BASE_LIVES + G.p.lives + M.lives;
+
+// ================= canvas & geometry =================
+const cv = $("cv"), ctx = cv.getContext("2d"), stage = $("stage");
+let W = 0, H = 0, DPR = 1;
+const PAD_TOP = 84, PAD_BOT = 40, PAD_X = 22;
+function resize() {
+  const r = stage.getBoundingClientRect();
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = r.width; H = r.height;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  measureHud();
+}
+const hudMq = window.matchMedia ? matchMedia("(max-width: 760px), (orientation: portrait) and (max-width: 1000px)") : null;
+const stackedHud = () => !!(hudMq && hudMq.matches);
+// The play field sits between the HUD (title, path, virus status) and the legend row,
+// measured live, with room for the biggest host's radius so nothing pokes into the text.
+let hudBottom = PAD_TOP, legendTop = 0;
+function measureHud() {
+  const sr = stage.getBoundingClientRect();
+  const hud = document.querySelector(".hud");
+  hudBottom = hud ? Math.max(40, hud.getBoundingClientRect().bottom - sr.top) : PAD_TOP;
+  const tops = [$("legend"), $("autoBtn")].map(el => el && el.offsetHeight ? el.getBoundingClientRect().top - sr.top : H).filter(v => v > 0);
+  legendTop = tops.length ? Math.min(...tops) : H - PAD_BOT;
+}
+function field() {
+  const m = 30; // clearance for host radius, rings and labels
+  const top = hudBottom + m, bottom = (legendTop || H - PAD_BOT) - m;
+  return { x: PAD_X + 14, y: top, w: Math.max(50, W - (PAD_X + 14) * 2), h: Math.max(50, bottom - top) };
+}
+// Every world lives in a fixed 1.4 : 1 space, so host layout and distances are the same on any screen.
+// It's scaled uniformly to fit the play field, and turned sideways when the field is taller than wide.
+// (Only uniform scaling and a swap of axes are used, so every distance keeps the same proportions.)
+const WORLD_W = 1.4, WORLD_H = 1;
+let viewCache = null;
+function view() {
+  const f = field();
+  const key = f.x + "|" + f.y + "|" + f.w + "|" + f.h;
+  if (viewCache && viewCache.key === key) return viewCache;
+  const turn = f.h > f.w * 1.05;
+  const ww = turn ? WORLD_H : WORLD_W, wh = turn ? WORLD_W : WORLD_H;
+  const sc = Math.min(f.w / ww, f.h / wh);
+  viewCache = { key, turn, sc, ox: f.x + (f.w - ww * sc) / 2, oy: f.y + (f.h - wh * sc) / 2 };
+  return viewCache;
+}
+function hostPos(h) {
+  const v = view(), wx = h.fx * WORLD_W, wy = h.fy * WORLD_H;
+  return v.turn ? [v.ox + wy * v.sc, v.oy + wx * v.sc] : [v.ox + wx * v.sc, v.oy + wy * v.sc];
+}
+function spacing() { return Math.sqrt((WORLD_W * WORLD_H) / R.hosts.length) * view().sc; }
+function baseRadius() { return Math.max(6, Math.min(24, spacing() * 0.22)); }
+function rangePx() { return spacing() * 0.85 * (1 + 0.12 * R.lv.reach) * M.range; }
+
+function generateWorld() {
+  const w = R.world;
+  const rng = mulberry32(R.seed + w * 7919);
+  const n = Math.min(80, 36 + 4 * (w - 1));
+  // fixed world shape, independent of the screen
+  const bw = 1, bh = WORLD_H / WORLD_W;
+  const centers = [];
+  const cn = 3 + Math.floor(rng() * 3);
+  for (let i = 0; i < cn; i++) centers.push([0.08 * bw + rng() * 0.84 * bw, 0.08 * bh + rng() * 0.84 * bh]);
+  // world 1 is the tutorial world: no map curses, no sturdy hosts, no special hosts
+  const gentle = w === 1;
+  const scatter = gentle ? 0 : M.scatter;
+  const sigma = 0.13 * Math.max(bw, bh) * (1 + 0.35 * scatter);
+  const floor = Math.min(0.6, 0.03 + 0.2 * scatter);
+  let minD = 0.55 * Math.sqrt((bw * bh) / n);
+  const pts = [];
+  let tries = 0;
+  while (pts.length < n) {
+    tries++;
+    if (tries > 200000) { pts.push([rng() * bw, rng() * bh]); continue; }
+    if (tries % 5000 === 0) minD *= 0.92;
+    const x = rng() * bw, y = rng() * bh;
+    let dens = 0;
+    for (const c of centers) { const d2 = (x - c[0]) ** 2 + (y - c[1]) ** 2; dens = Math.max(dens, Math.exp(-d2 / (2 * sigma * sigma))); }
+    if (rng() > floor + (1 - floor) * dens) continue;
+    let ok = true;
+    for (const p of pts) { if ((p[0] - x) ** 2 + (p[1] - y) ** 2 < minD * minD) { ok = false; break; } }
+    if (ok) pts.push([x, y]);
+  }
+  const hpBase = worldHp(w);
+  R.hosts = pts.map(p => {
+    const r = rng();
+    let type = r < 0.22 ? "frail" : r < 0.83 ? "common" : "sturdy";
+    if (gentle && type === "sturdy") type = "common";
+    // carrier is a trait any size of host can have
+    const carrier = rng() < 0.1;
+    return { fx: p[0] / bw, fy: p[1] / bh, type, carrier, base: hpBase * TYPES[type].hp * (carrier ? 0.8 : 1), inf: false, stacks: 0, t: 0, tick: 0, sAcc: 0, bAcc: 0,
+      resist: 0, dead: false, earned: 0, pulse: rng() * 6.28, vacc: false, healer: false, sentinel: false, hAcc: rng() * 4 };
+  });
+  // special hosts from curses
+  const idx = shuffle(R.hosts.map((_, i) => i));
+  let c = 0;
+  const take = frac => { const k = Math.round(frac * R.hosts.length); const out = idx.slice(c, c + k); c += k; return out; };
+  if (!gentle) {
+    take(M.vacc).forEach(i => R.hosts[i].vacc = true);
+    take(M.healers).forEach(i => R.hosts[i].healer = true);
+    take(M.sentinels).forEach(i => R.hosts[i].sentinel = true);
+  }
+  // boss worlds: one giant host in the middle of the map
+  if (isBossWorld(w)) {
+    const z = zoneOf(w), cx = 0.5, cy = 0.5, clear = 0.13;
+    R.hosts = R.hosts.filter(h => Math.hypot((h.fx - cx) * bw, (h.fy - cy) * bh) > clear * Math.max(bw, bh));
+    const boss = { fx: cx, fy: cy, type: "common", carrier: false, boss: z, base: hpBase * ZONES[z].hp, inf: false, stacks: 0, t: 0, tick: 0, sAcc: 0, bAcc: 0,
+      resist: 0, dead: false, earned: 0, pulse: 0, vacc: false, healer: z === 1, healRange: z === 1 ? 2.6 : 1, sentinel: z === 2, hAcc: 0, docT: 0 };
+    R.hosts.push(boss);
+    G.seen.bosses[z] = true;
+  }
+  const ascHp = Math.pow(1.25, R.asc || 0);
+  for (const h of R.hosts) { h.max = h.base * M.hp * ascHp; h.hp = h.max; }
+  for (const h of R.hosts) {
+    G.seen.hosts[h.type] = true;
+    if (h.carrier) G.seen.hosts.carrier = true;
+    if (h.vacc) G.seen.hosts.vacc = true;
+    if (h.healer && h.boss === undefined) G.seen.hosts.healer = true;
+    if (h.sentinel && h.boss === undefined) G.seen.hosts.sentinel = true;
+  }
+  R.lastPz = -1;
+  buildLegend();
+}
+const hostSize = h => h.boss !== undefined ? 2.4 : TYPES[h.type].size;
+const HOST_INFO = {
+  frail:    ["Frail", "Low health, so it dies fast. A quick first kill, but a small payout."],
+  common:   ["Common", "Average health and payout. Most of every map is made of these."],
+  sturdy:   ["Sturdy", "About 2.6 times the health, so it takes a while to kill, but it pays 20% more lifeforce per hit."],
+  carrier:  ["Carrier", "A trait any size of host can have, shown by the dotted ring. Once infected, its jumps reach 60% farther, bridging gaps between clusters. It has 20% less health and pays a little less."],
+  vacc:     ["Vaccinated", "Can't be infected at all, and doesn't count toward clearing the world. Your virus has to route around it."],
+  healer:   ["Healer", "Every 4 seconds, removes a stack from each infected host in its range and heals them a little. Infecting the healer stops it."],
+  sentinel: ["Sentinel", "Can't be infected until a neighbor within range dies. Kill something next to it first."]
+};
+function buildLegend() {
+  const items = ["frail", "common", "sturdy", "carrier"];
+  if (R.hosts.some(h => h.vacc)) items.push("vacc");
+  if (R.hosts.some(h => h.healer)) items.push("healer");
+  if (R.hosts.some(h => h.sentinel && h.boss === undefined)) items.push("sentinel");
+  const boss = R.hosts.find(h => h.boss !== undefined);
+  if (boss) { HOST_INFO.boss = [ZONES[boss.boss].boss, "Boss. " + ZONES[boss.boss].bossText + " It must die to clear the world."]; items.push("boss"); }
+  const el = $("legend"); el.innerHTML = "";
+  for (const k of items) {
+    const b = document.createElement("button");
+    b.className = "leg"; b.type = "button"; b.dataset.k = k;
+    b.innerHTML = '<i class="' + (k === "common" ? "" : k) + '"></i>' + (k === "boss" ? "Boss" : HOST_INFO[k][0]);
+    b.setAttribute("aria-label", HOST_INFO[k][0] + ": " + HOST_INFO[k][1]);
+    b.addEventListener("mouseenter", () => showTip(b));
+    b.addEventListener("mouseleave", hideTip);
+    b.addEventListener("focus", () => showTip(b));
+    b.addEventListener("blur", hideTip);
+    b.addEventListener("click", e => { e.stopPropagation(); showTip(b); }); // tapping elsewhere closes it
+    el.appendChild(b);
+  }
+}
+let tipFor = null;
+function showTip(b) {
+  const tip = $("legendTip"), k = b.dataset.k;
+  tip.innerHTML = "<b>" + HOST_INFO[k][0] + "</b>" + HOST_INFO[k][1];
+  tip.classList.add("show"); tipFor = k;
+  const sr = stage.getBoundingClientRect(), br = b.getBoundingClientRect();
+  const w = tip.offsetWidth;
+  const left = Math.max(8, Math.min(sr.width - w - 8, br.left - sr.left + br.width / 2 - w / 2));
+  tip.style.left = left + "px";
+  tip.style.top = "auto";
+  tip.style.bottom = (sr.bottom - br.top + 8) + "px";
+}
+function worldTipHtml() {
+  const z = zoneOf(R.world), toBoss = ZONE_SIZE * (z + 1) - R.world;
+  return "<b>Zone " + (z + 1) + " of " + ZONES.length + ": " + ZONES[z].name + "</b>" +
+    (toBoss === 0 ? "This is the boss world. " + ZONES[z].bossText : "Boss in " + toBoss + " world" + (toBoss > 1 ? "s" : "") + ": " + ZONES[z].boss + ".") +
+    " World " + R.world + " of " + FINAL_WORLD + ".";
+}
+function showWorldTip() {
+  const tip = $("legendTip"), el = $("worldName");
+  tip.innerHTML = worldTipHtml();
+  tip.classList.add("show"); tipFor = "world";
+  const sr = stage.getBoundingClientRect(), br = el.getBoundingClientRect();
+  tip.style.left = Math.max(8, Math.min(sr.width - tip.offsetWidth - 8, br.left - sr.left)) + "px";
+  tip.style.bottom = "auto";
+  tip.style.top = (br.bottom - sr.top + 6) + "px";
+}
+$("worldName").addEventListener("mouseenter", showWorldTip);
+$("worldName").addEventListener("mouseleave", hideTip);
+$("worldName").addEventListener("click", e => { e.stopPropagation(); showWorldTip(); });
+function hideTip() { $("legendTip").classList.remove("show"); tipFor = null; }
+document.addEventListener("pointerdown", e => { if (!e.target.closest || !(e.target.closest(".leg") || e.target.closest("#worldName"))) hideTip(); });
+
+// ================= derived stats =================
+const permDmg = () => Math.pow(1.2, G.p.potency);
+const permLf = () => Math.pow(1.2, G.p.yield);
+const stackCap = () => 5 + 3 * R.lv.stacking;
+const stackInt = () => 3 * Math.pow(0.88, R.lv.replication) * M.stackSlow;
+const tickInt = () => 0.5 * Math.pow(0.88, R.lv.tempo);
+function bounceCd(l) { return 8 * Math.pow(0.88, l) / (M ? M.bounceSpeed : 1); }
+function bounceChance(l) { return Math.min(0.75, 0.15 + 0.07 * l); }
+const required = () => R.hosts.filter(h => !h.vacc);
+const killedCount = () => R.hosts.reduce((n, h) => n + (h.dead ? 1 : 0), 0);
+const alertLevel = () => Math.min(1, M.alert * killedCount() / Math.max(1, required().length));
+function cleanseBase() { return 0.05 * Math.pow(1.25, R.world - 1) * Math.pow(0.88, R.lv.stealth) * (1 + 3 * alertLevel()); }
+const adaptTime = () => 12 * (1 + 0.15 * R.lv.shapeshift) * M.adapt / Math.pow(1.08, R.world - 1);
+const regenRate = () => 0.008 * Math.pow(1.1, R.world - 1) * Math.pow(0.85, R.lv.suppress) * M.regen;
+function rampMult(t) { const l = R.lv.wither; return l ? 1 + Math.min(0.04 * l * t, l) : 1; }
+const cureTime = () => CURE_BASE * M.cure * (1 + 0.1 * G.p.cure) * Math.pow(0.92, R.asc || 0) / Math.pow(CURE_SHRINK, R.world - 1);
+const dnaMult = () => 1 + 0.35 * (R.asc || 0);
+const lfMult = () => YIELD * Math.pow(1.2, R.lv.siphon) * permLf() * M.lf;
+const dmgMult = () => 0.5 * Math.pow(1.3, R.lv.virulence) * permDmg() * M.dmg;
+const canInfect = h => !h.dead && !h.inf && !h.vacc && !h.sentinel && h.resist <= 0;
+const canPlace = h => !h.dead && !h.inf && !h.vacc && !h.sentinel;
+
+// ================= simulation =================
+let rateWindow = [], links = [], floats = [], now = 0;
+let silent = false; // true during offline catch-up: no visuals, no overlays
+
+function infect(h, stacks) {
+  h.inf = true; h.stacks = Math.max(1, Math.min((stacks || 1) + M.startStacks, stackCap())); h.t = 0;
+  h.tick = Math.random() * tickInt(); h.sAcc = 0; h.bAcc = Math.random() * 2;
+}
+function nearby(src, range, filter) {
+  const [sx, sy] = hostPos(src);
+  const c = [];
+  for (const h of R.hosts) {
+    if (h === src || !filter(h)) continue;
+    const [x, y] = hostPos(h);
+    const d = Math.hypot(x - sx, y - sy);
+    if (d <= range) c.push([d, h]);
+  }
+  c.sort((a, b) => a[0] - b[0]);
+  return c.map(e => e[1]);
+}
+function link(a, b) { if (!silent) links.push({ a, b, t: 0 }); }
+function float(h, text, soft) { if (silent || G.settings.floats === false) return; const [x, y] = hostPos(h); floats.push({ x, y, text, t: 0, soft }); }
+function spreadFrom(src) {
+  if (Math.random() > bounceChance(R.lv.bounce)) return;
+  const range = rangePx() * (src.carrier ? 1.6 : 1);
+  const extra = Math.random() < Math.min(0.85, 0.08 * R.lv.split + M.split) ? 1 : 0;
+  const targets = nearby(src, range, canInfect).slice(0, 1 + extra);
+  const carry = R.mu.chain ? Math.floor(src.stacks * (0.25 + 0.15 * R.mu.chain)) : 1;
+  for (const t of targets) { infect(t, carry); link(src, t); }
+}
+function gain(h, amount) {
+  R.lf += amount; h.earned += amount;
+  if (!silent) rateWindow.push([now, amount]);
+}
+function kill(h) {
+  h.dead = true; h.inf = false; h.hp = 0;
+  R.kills++;
+  const d = 0.25 * Math.pow(DNA_GROWTH, R.world - 1) * dnaMult();
+  R.dna += d; // banked when the run ends
+  gain(h, h.max * (0.1 + 0.15 * R.lv.harvest) * M.harvest * lfMult());
+  float(h, "+" + fmt(h.earned));
+  const range = rangePx();
+  // sentinels wake up when a neighbor dies (the Quarantine boss has its own rule)
+  for (const s of nearby(h, range, o => o.sentinel && !o.dead && o.boss === undefined)) s.sentinel = false;
+  if (h.boss !== undefined) {
+    const bd = 10 * Math.pow(DNA_GROWTH, R.world - 1) * dnaMult();
+    R.dna += bd;
+    if (!G.bosses[h.boss]) { G.bosses[h.boss] = true; R.newBoss = h.boss; }
+  }
+  const n = 2 + R.lv.contagion + M.contagion + R.mu.spores; // every death spreads to at least two neighbors
+  if (n > 0) {
+    for (const t of nearby(h, range * 1.1, canInfect).slice(0, n)) { infect(t, R.mu.spores ? 2 * R.mu.spores : 1); link(h, t); }
+  }
+  if (R.mu.necrosis) {
+    const cap = stackCap() + R.mu.necrosis;
+    for (const o of nearby(h, range, o => o.inf && !o.dead)) o.stacks = Math.min(cap, o.stacks + R.mu.necrosis);
+  }
+}
+function damageHost(h, raw) {
+  let dmg = raw;
+  let y = TYPES[h.type].yield * (h.carrier ? 0.9 : 1) * lfMult();
+  if (R.lv.linger && h.hp < h.max * 0.25) { dmg *= Math.max(0.4, 1 - 0.08 * R.lv.linger); y *= 1 + 0.3 * R.lv.linger; }
+  const actual = Math.min(dmg, h.hp);
+  h.hp -= actual;
+  gain(h, actual * y);
+  if (h.hp <= 1e-9) kill(h);
+}
+function step(dt) {
+  if (R.phase !== "run") return;
+  const cap = stackCap(), ti = tickInt(), si = stackInt(), rg = regenRate();
+  const cb = cleanseBase(), ad = adaptTime(), dm = dmgMult();
+  const bcd = bounceCd(R.lv.bounce);
+  for (const h of R.hosts) {
+    if (h.dead) continue;
+    if (h.boss === 2 && h.sentinel && killedCount() >= required().length * 0.4) {
+      h.sentinel = false;
+      if (!silent) toast("The Quarantine has broken. It can be infected now.");
+    }
+    if (h.boss === 3) {
+      h.docT += dt;
+      if (h.docT >= 8) {
+        h.docT = 0;
+        for (const o of nearby(h, rangePx() * 2.2, o => o.inf && !o.dead)) { o.inf = false; o.resist = 1e9; link(h, o); float(o, "cured", true); }
+      }
+    }
+    if (h.healer && !h.inf) {
+      h.hAcc += dt;
+      if (h.hAcc >= 4) {
+        h.hAcc = 0;
+        for (const o of nearby(h, rangePx() * (h.healRange || 1), o => o.inf && !o.dead)) {
+          o.stacks--; o.hp = Math.min(o.max, o.hp + o.max * 0.05);
+          if (o.stacks <= 0) { o.inf = false; o.resist = 1e9; }
+          link(h, o);
+        }
+      }
+    }
+    if (!h.inf) continue;
+    h.t += dt; h.sAcc += dt; h.tick += dt; h.bAcc += dt;
+    while (h.sAcc >= si) { h.sAcc -= si; if (h.stacks < cap) h.stacks++; }
+    while (h.tick >= ti && h.inf && !h.dead) { h.tick -= ti; damageHost(h, dm * h.stacks * rampMult(h.t)); }
+    if (h.dead || !h.inf) continue;
+    h.hp = Math.min(h.max, h.hp + rg * (h.boss === 0 ? 3 : 1) * h.max * dt);
+    if (h.t > 4 && Math.random() < cb * (1 + h.t / (h.boss === 4 ? ad / 2 : ad)) * dt) {
+      h.stacks--;
+      if (h.stacks <= 0) { h.inf = false; h.resist = 1e9; h.t = 0; }
+    }
+    if (h.inf && h.stacks >= SHED_STACKS && h.bAcc >= bcd) { h.bAcc = 0; spreadFrom(h); }
+  }
+  if (R.mu.flare) {
+    R.flareT += dt;
+    if (R.flareT >= 10) {
+      R.flareT = 0;
+      for (const h of R.hosts) {
+        if (!h.inf || h.dead) continue;
+        damageHost(h, dm * h.stacks * rampMult(h.t) * ((2 + R.mu.flare) / ti));
+        float(h, "flare", true);
+      }
+    }
+  }
+  // the world races to a cure; when it lands, this virus is wiped out
+  R.cure += dt / cureTime();
+  if (R.cure >= 1) {
+    for (const h of R.hosts) if (h.inf) { h.inf = false; h.resist = 1e9; float(h, "cured", true); }
+    if (!silent) toast("The cure landed.");
+  }
+  checkMutations();
+  if (required().every(q => q.dead)) worldCleared();
+  else if (!R.hosts.some(q => q.inf)) virusLost();
+}
+
+// ================= flow =================
+function place(h) {
+  if (R.phase !== "pick" || !h || h.dead || h.vacc || h.sentinel) return false;
+  for (const o of R.hosts) o.resist = 0; // a fresh strain: old immunity doesn't apply
+  R.lastPz = R.hosts.indexOf(h);
+  infect(h, 1 + G.p.incubate);
+  R.cure = 0;
+  R.phase = "run";
+  if (!silent && !R.tipShown && (G.tips || 0) < 3) {
+    R.tipShown = true; G.tips = (G.tips || 0) + 1;
+    toast("Tip: a host needs " + SHED_STACKS + " stacks before it can pass the virus on. Hover any host to see its reach.", 6000);
+  }
+  float(h, "virus " + (maxLives() - R.lives + 1), true);
+  return true;
+}
+function virusLost() {
+  R.lives--;
+  if (R.lives <= 0) { runOver(); return; }
+  R.phase = "pick"; R.autoT = 0;
+  if (!R.hosts.some(canPlace)) R.hosts.forEach(h => { if (!h.dead) h.sentinel = false; });
+  if (!silent) toast("Your virus died out. " + R.lives + " left for this world.");
+}
+function worldCleared() {
+  const d = 3 * Math.pow(DNA_GROWTH, R.world - 1) * dnaMult();
+  R.dna += d; // banked when the run ends
+  G.best = Math.max(G.best, Math.min(FINAL_WORLD, R.world + 1));
+  if (R.world >= FINAL_WORLD) { victory(); return; }
+  R.phase = "cards";
+  R.offer = makeOffer();
+  R.pickB = null; R.pickC = null; R.autoT = 0; R.touched = false;
+  if (!silent) showCards();
+}
+function victory() {
+  G.wins++;
+  G.ascMax = Math.min(10, Math.max(G.ascMax, (R.asc || 0) + 1));
+  R.victory = true;
+  runOver();
+}
+function weightedPick(pool, n) {
+  const keys = Object.keys(pool), out = [];
+  while (out.length < n && out.length < keys.length) {
+    const left = keys.filter(k => !out.includes(k));
+    let tot = left.reduce((s, k) => s + pool[k].w, 0), r = Math.random() * tot;
+    for (const k of left) { r -= pool[k].w; if (r <= 0) { out.push(k); break; } }
+  }
+  return out;
+}
+function makeOffer() {
+  // Windfall is useless before you have any lifeforce, so it stays out of the opening pick
+  const pool = Object.fromEntries(Object.entries(BOONS).filter(([k, d]) =>
+    !(R.phase === "start" && k === "windfall") && (d.needsBoss === undefined || G.bosses[d.needsBoss])));
+  const offer = { boons: weightedPick(pool, 3), curses: weightedPick(CURSES, 3) };
+  offer.boons.forEach(k => G.seen.boons[k] = true); offer.curses.forEach(k => G.seen.curses[k] = true);
+  return offer;
+}
+function chooseCards(b, c) {
+  R.newBoss = undefined;
+  R.boons.push(b); R.curses.push(c);
+  if (BOONS[b].once) BOONS[b].once();
+  recomputeMods();
+  R.world++;
+  R.lives = maxLives();
+  R.rerolls = G.p.reroll;
+  R.offer = null;
+  generateWorld();
+  for (const h of R.hosts) { h.max = h.base * M.hp; h.hp = h.max; }
+  R.phase = "pick"; R.autoT = 0;
+  if (!silent) { $("cardsOv").classList.remove("show"); links = []; floats = []; rateWindow = []; renderTabs(); renderPanel(); updateHud(); save(); }
+}
+// run end: summary -> DNA shop -> next run
+function runOver() {
+  R.phase = "over"; R.stage = "summary"; R.autoT = 0; R.shopHold = false;
+  // DNA is only paid out when a run ends
+  if (!R.banked) { R.banked = true; G.dna += R.dna; G.dnaTotal += R.dna; }
+  if (!silent) { showRunOver(); save(); }
+}
+function openShop() {
+  R.stage = "shop"; R.autoT = 0; R.shopHold = false;
+  if (!silent) { $("overlay").classList.remove("show"); showShop(); save(); }
+}
+function startNewRun() {
+  shopFromMenu = shopFromRun = false; $("shopOv").classList.remove("from-menu");
+  newRun();
+  links = []; floats = []; rateWindow = [];
+  if (!silent) { $("overlay").classList.remove("show"); $("shopOv").classList.remove("show"); renderTabs(); renderPanel(); updateHud(); showCards(); save(); }
+}
+function checkMutations() {
+  for (const k in MUT) {
+    if (R.found[k]) continue;
+    const needs = MUT[k].needs;
+    if (Object.keys(needs).every(u => R.lv[u] >= needs[u])) {
+      R.found[k] = true; G.seen.muts[k] = true;
+      if (!silent) { toast("Mutation discovered: " + MUT[k].name); renderTabs(); if (tab === "mutations") renderPanel(); }
+    }
+  }
+}
+
+// ================= automation =================
+// By default, any decision you leave alone for 10 seconds gets made for you.
+// Evolve unlocks let you steer how those decisions are made.
+const autoOn = k => G.auto[k].owned && G.auto[k].on;
+const setting = (k, unlock) => (G.auto[unlock] && G.auto[unlock].owned) ? G.settings[k] : DEFAULT_SETTINGS[k];
+// longer while you're looking at the game, shorter when it's in the background
+const FOCUS_WAIT = 15, BLUR_WAIT = 5;
+const decideWait = () => silent ? 0 : autoOn("reflexes") ? 1 : (document.hasFocus() ? FOCUS_WAIT : BLUR_WAIT);
+function autoBuy() {
+  const focus = G.settings.buyFocus;
+  const base = { bounce: 2, contagion: 2, reach: 2, stealth: 1.5, shapeshift: 1.5 };
+  let guard = 0;
+  while (guard++ < 100) {
+    let best = null, bc = Infinity, real = 0;
+    for (const k in UP) {
+      const d = UP[k]; if (R.lv[k] >= d.max) continue;
+      const w = (base[k] || 1) * (focus !== "balanced" && d.tree === focus ? 4 : 1);
+      const c = runCost(d, R.lv[k]); const score = c / w;
+      if (score < bc) { bc = score; best = [k, false]; real = c; }
+    }
+    for (const k in MUT) {
+      if (!R.found[k]) continue; const d = MUT[k]; if (R.mu[k] >= d.max) continue;
+      const c = runCost(d, R.mu[k]); if (c < bc) { bc = c; best = [k, true]; real = c; }
+    }
+    if (!best || R.lf < real) return;
+    buy(best[0], best[1], true);
+  }
+}
+function bestStart() {
+  const style = setting("placeStyle", "instinct");
+  const rr = rangePx() * 1.8;
+  let best = null, bs = -Infinity;
+  for (const h of R.hosts) {
+    if (!canPlace(h)) continue;
+    const near = nearby(h, rr, o => canPlace(o) || o.sentinel);
+    const healers = nearby(h, rr, o => o.healer && !o.dead).length;
+    let s = near.length - 2 * healers + Math.random() * 0.3;
+    if (style === "easy") {
+      // fastest first kill wins: a weak (or already damaged) host surrounded by other weak hosts,
+      // so its death spreads straight into more quick kills
+      const ref = worldHp(R.world);
+      const ease = o => Math.min(4, ref / Math.max(1, o.hp));
+      s = 3 * ease(h) + near.reduce((t, o) => t + ease(o), 0) * 0.6 - 3 * healers + Math.random() * 0.2;
+    }
+    if (style === "payout") s = near.reduce((t, o) => t + o.max, h.max) / h.max - 2 * healers;
+    if (style === "healers") s = near.length - 8 * healers;
+    if (style === "carriers") s = near.length + 3 * near.filter(o => o.carrier).length + (h.carrier ? 4 : 0) - 2 * healers;
+    if (s > bs) { bs = s; best = h; }
+  }
+  return best;
+}
+function autoCards() {
+  const focus = setting("boonFocus", "doctrine"), rule = setting("curseRule", "doctrine");
+  const bScore = k => (focus !== "balanced" && BOON_TAGS[k] === focus ? -10 : 0) + BOONS[k].w + Math.random() * 0.1;
+  const cScore = k => CURSES[k].pain + (rule === "noMap" && MAP_CURSES.includes(k) ? 10 : 0) + (rule === "noImmune" && IMMUNE_CURSES.includes(k) ? 10 : 0) + Math.random() * 0.1;
+  const b = R.offer.boons.slice().sort((x, y) => bScore(x) - bScore(y))[0];
+  const c = R.offer.curses.slice().sort((x, y) => cScore(x) - cScore(y))[0];
+  if (R.phase === "start") chooseStart(b, c); else chooseCards(b, c);
+}
+// called every frame (live) or every sim step (offline)
+function autoTick(dt) {
+  if (R.phase !== "over") R.elapsed += dt;
+  if (R.phase === "run" && autoOn("autoBuy")) autoBuy();
+  if (!G.settings.autoChoose) return;
+  R.autoT += dt;
+  if (R.phase === "over") {
+    if (R.stage === "summary" && R.autoT >= (silent ? 0 : SUMMARY_WAIT)) openShop();
+    else if (R.stage === "shop" && !R.shopHold && R.autoT >= (silent ? 0 : SHOP_WAIT)) startNewRun();
+    return;
+  }
+  if (R.autoT < decideWait()) return;
+  if (R.phase === "pick") { if (autoOn("autoBuy")) autoBuy(); place(bestStart()); }
+  else if ((R.phase === "cards" || R.phase === "start") && !R.touched) autoCards();
+}
+const SUMMARY_WAIT = 6, SHOP_WAIT = 10;
+const countdown = () => Math.max(0, Math.ceil(decideWait() - R.autoT));
+
+// ================= overlays =================
+let overlayAction = null;
+function showOverlay(title, text, btn, action) {
+  $("ovTitle").textContent = title; $("ovText").textContent = text; $("ovBtn").textContent = btn;
+  overlayAction = action;
+  $("overlay").classList.add("show");
+}
+$("ovBtn").addEventListener("click", () => { $("overlay").classList.remove("show"); const a = overlayAction; overlayAction = null; if (a) a(); });
+
+// play/pause for automatic choices, on the arena
+const PAUSE_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1" width="3" height="10"/><rect x="7" y="1" width="3" height="10"/></svg>';
+const PLAY_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1 L11 6 L2 11 Z"/></svg>';
+function updateAutoBtn() {
+  const on = G.settings.autoChoose, b = $("autoBtn");
+  b.setAttribute("aria-pressed", on);
+  b.innerHTML = on ? PLAY_ICON + "Auto on" : PAUSE_ICON + "Auto off";
+  b.title = on ? "Turn off automatic choices" : "Turn on automatic choices";
+}
+$("autoBtn").addEventListener("click", () => {
+  G.settings.autoChoose = !G.settings.autoChoose; R.autoT = 0;
+  updateAutoBtn(); updateHud(); if (tab === "evolve" || $("shopOv").classList.contains("show")) renderPanel(); save();
+});
+function updateCountdowns() {
+  const auto = G.settings.autoChoose;
+  const n = countdown();
+  if ($("cardsOv").classList.contains("show")) {
+    const note = $("cardsAuto");
+    note.textContent = !auto ? "" : R.touched ? "Auto-pick paused while you choose." : "Auto-picking in " + n + "s.";
+  }
+  if (R.phase === "over" && R.stage === "summary" && $("overlay").classList.contains("show"))
+    $("ovBtn").textContent = auto ? "Spend DNA (" + Math.max(0, Math.ceil(SUMMARY_WAIT - R.autoT)) + "s)" : "Spend DNA";
+  if ((shopFromMenu || shopFromRun) && $("shopOv").classList.contains("show")) {
+    $("shopGo").textContent = shopFromMenu ? "Back to menu" : "Close"; $("shopNote").textContent = ""; $("shopDna").textContent = fmt(G.dna);
+  } else if (R.phase === "over" && R.stage === "shop" && $("shopOv").classList.contains("show")) {
+    const b = $("shopGo"), note = $("shopNote");
+    if (auto && !R.shopHold) {
+      b.textContent = "Next run in " + Math.max(0, Math.ceil(SHOP_WAIT - R.autoT)) + "s";
+      note.textContent = "Tap to stop the countdown and keep shopping.";
+    } else { b.textContent = "Start next run"; note.textContent = ""; }
+    $("shopDna").textContent = fmt(G.dna);
+  }
+}
+function showRunOver() {
+  const newBest = G.best > R.bestBefore;
+  const counts = (keys, pool) => { const c = {}; keys.forEach(k => c[k] = (c[k] || 0) + 1); return Object.entries(c).map(([k, n]) => pool[k].name + (n > 1 ? " ×" + n : "")).join(", ") || "none"; };
+  $("ovTitle").textContent = R.victory ? "The planet has fallen" : newBest ? "Run over, new best!" : "Run over";
+  $("ovText").innerHTML =
+    (R.victory ? '<span class="stat"><b>Patient Omega is dead.</b> You won' + (R.asc ? " on Ascension " + R.asc : "") + ". Ascension " + G.ascMax + " is now open from the main menu.</span>"
+      : '<span class="stat"><b>World ' + R.world + '</b> reached' + (newBest ? " (best is now " + G.best + ")" : ", best is " + G.best) + "</span>") +
+    '<span class="stat"><b>' + R.kills + "</b> hosts killed in " + fmtTime(R.elapsed) + "</span>" +
+    '<span class="stat"><b>' + fmt(R.dna) + " DNA</b> earned, " + fmt(G.dna) + " to spend</span>" +
+    '<span class="stat small">Boons: ' + counts(R.boons, BOONS) + "</span>" +
+    '<span class="stat small">Curses: ' + counts(R.curses, CURSES) + "</span>";
+  overlayAction = openShop;
+  $("overlay").classList.add("show");
+  updateCountdowns();
+}
+function showShop() {
+  renderShop();
+  $("shopOv").classList.add("show");
+  updateCountdowns();
+}
+function renderShop() {
+  const el = $("shopList"); el.innerHTML = "";
+  renderEvolve(el);
+  refreshButtons();
+}
+$("shopGo").addEventListener("click", () => {
+  if (shopFromMenu || shopFromRun) { shopFromMenu = shopFromRun = false; $("shopOv").classList.remove("show", "from-menu"); if (R.phase === "over" && R.stage === "shop") showShop(); return; }
+  if (G.settings.autoChoose && !R.shopHold) { R.shopHold = true; updateCountdowns(); return; }
+  startNewRun();
+});
+// any interaction on the shop screen resets the countdown
+$("shopOv").addEventListener("pointerdown", e => { if (e.target.id !== "shopGo") R.autoT = 0; });
+function cardBtn(kind, key) {
+  const def = kind === "boon" ? BOONS[key] : CURSES[key];
+  const b = document.createElement("button");
+  b.className = "pcard " + kind;
+  b.setAttribute("aria-pressed", (kind === "boon" ? R.pickB : R.pickC) === key);
+  b.innerHTML = "<b>" + def.name + "</b><span>" + def.text + "</span>";
+  b.addEventListener("click", () => { if (kind === "boon") R.pickB = key; else R.pickC = key; R.touched = true; showCards(); });
+  return b;
+}
+function showCards() {
+  const start = R.phase === "start";
+  $("cardsTitle").textContent = start ? "Run " + G.runs + " begins" : worldTitle(R.world) + (isBossWorld(R.world) ? " is dead" : " has fallen");
+  $("cardsText").textContent = (R.newBoss !== undefined ? "First kill of " + ZONES[R.newBoss].boss + "! " + ZONES[R.newBoss].reward + ". " : "") +
+    "Pick one boon and one curse. Both last for the rest of this run.";
+  const br = $("boonRow"), cr = $("curseRow"); br.innerHTML = ""; cr.innerHTML = "";
+  R.offer.boons.forEach(k => br.appendChild(cardBtn("boon", k)));
+  R.offer.curses.forEach(k => cr.appendChild(cardBtn("curse", k)));
+  const go = $("cardsGo");
+  const ready = !!(R.pickB && R.pickC);
+  go.disabled = !ready;
+  go.textContent = start ? "Start world 1" : "Continue to world " + (R.world + 1);
+  updateCountdowns();
+  const rb = $("rerollBtn");
+  rb.style.visibility = G.p.reroll ? "visible" : "hidden";
+  rb.textContent = "Reroll (" + R.rerolls + " left)";
+  rb.disabled = R.rerolls <= 0;
+  $("cardsOv").classList.add("show");
+}
+$("cardsGo").addEventListener("click", () => {
+  if (!(R.pickB && R.pickC)) return;
+  if (R.phase === "start") chooseStart(R.pickB, R.pickC); else chooseCards(R.pickB, R.pickC);
+});
+$("rerollBtn").addEventListener("click", () => { if (R.rerolls <= 0) return; R.rerolls--; R.offer = makeOffer(); R.pickB = R.pickC = null; R.autoT = 0; R.touched = true; showCards(); });
+
+// ================= input =================
+let hover = null;
+function pick(px, py) {
+  let best = null, bd = Infinity;
+  const r = baseRadius();
+  for (const h of R.hosts) {
+    const [x, y] = hostPos(h);
+    const d = Math.hypot(px - x, py - y);
+    if (d < r * hostSize(h) * 1.5 + 6 && d < bd) { bd = d; best = h; }
+  }
+  return best;
+}
+function localXY(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+cv.addEventListener("pointermove", e => { hover = pick(...localXY(e)); });
+cv.addEventListener("pointerleave", () => { hover = null; });
+cv.addEventListener("pointerdown", e => {
+  if (R.phase !== "pick") return;
+  const h = pick(...localXY(e));
+  if (!h || h.dead) return;
+  if (h.vacc) { toast("That host is vaccinated"); return; }
+  if (h.sentinel) { toast("Sentinels resist until a neighbor dies"); return; }
+  place(h); updateHud(); save();
+});
+
+// ================= panel =================
+let tab = "potency";
+function upCost(def, l) { return def.base * Math.pow(def.g, l) * Math.pow(1 + (def.k || 0), l * l); }
+// run upgrades get pricier each world, so lifeforce from easy worlds can't buy out the whole tree
+function runCost(def, l) { return upCost(def, l) * Math.pow(COST_GROWTH, R.world - 1); }
+function renderTabs() {
+  const el = $("tabs"); el.innerHTML = "";
+  for (const t of TREES) {
+    const b = document.createElement("button");
+    b.className = "tab"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", tab === t.id);
+    b.textContent = t.name;
+    if (t.id === "mutations" && Object.keys(MUT).some(k => R.found[k] && R.mu[k] === 0)) {
+      const d = document.createElement("span"); d.className = "dot"; b.appendChild(d);
+    }
+    b.addEventListener("click", () => { tab = t.id; renderTabs(); renderPanel(); });
+    el.appendChild(b);
+  }
+}
+function makeRow({ name, level, max, text, effNow, effNext, btnText, disabled, onClick, data, locked, extraClass }) {
+  const d = document.createElement("div");
+  d.className = "up" + (locked ? " locked" : "");
+  const h3 = document.createElement("h3");
+  h3.innerHTML = name + (level !== null && level !== undefined ? '<span class="lvl">Lv ' + level + (max < 999 ? " / " + max : "") + "</span>" : "");
+  const p = document.createElement("p");
+  p.innerHTML = text + (effNow ? '<br><span class="eff">' + effNow + (effNext ? "  →  " + effNext : "") + "</span>" : "");
+  const b = document.createElement("button");
+  b.className = "buy" + (extraClass ? " " + extraClass : "");
+  b.textContent = btnText; b.disabled = !!disabled;
+  if (data) Object.assign(b.dataset, data);
+  b.addEventListener("click", onClick);
+  d.append(h3, b, p);
+  return d;
+}
+function upRow(key, def, level, isMut) {
+  const locked = isMut && !R.found[key];
+  const maxed = level >= def.max;
+  if (locked) return makeRow({ name: def.name, text: "Needs " + Object.entries(def.needs).map(([u, n]) => UP[u].name + " " + n).join(" and "), btnText: "Locked", disabled: true, locked: true, onClick: () => {} });
+  let effNow = def.eff(level, M), effNext = maxed ? "" : def.eff(level + 1, M);
+  if (!isMut && def.mod && M[def.mod] !== NEUTRAL[def.mod]) {
+    const lines = cardsAffecting(def.mod).map(t => t.replace(/"/g, "&quot;")).join("<br>");
+    const esc = t => t.replace(/</g, "&lt;");
+    effNow = '<span class="buffed" tabindex="0" data-tip-title="Changed by your cards" data-tip="Without them: ' + esc(def.eff(level, NEUTRAL)) + "<br><br>" + lines + '">' +
+      esc(effNow) + (effNext ? "  →  " + esc(effNext) : "") + "</span>";
+    effNext = "";
+  }
+  return makeRow({ name: def.name, level, max: def.max, text: def.text, effNow, effNext,
+    btnText: maxed ? "Max" : fmt(runCost(def, level)), disabled: maxed, extraClass: maxed ? "maxed" : "",
+    data: maxed ? null : { kind: isMut ? "mut" : "up", key }, onClick: () => buy(key, isMut) });
+}
+function renderPanel() {
+  hideFloatTip();
+  const el = $("list"); el.innerHTML = "";
+  if (tab === "mutations") {
+    const n = document.createElement("p"); n.className = "section-note";
+    n.textContent = "Mutations are discovered by leveling two upgrades together, or found on cards.";
+    el.appendChild(n);
+    for (const k in MUT) el.appendChild(upRow(k, MUT[k], R.mu[k], true));
+  } else if (tab === "strain") {
+    renderStrain(el);
+  } else if (tab === "evolve") {
+    renderEvolve(el);
+  } else {
+    for (const k in UP) if (UP[k].tree === tab) el.appendChild(upRow(k, UP[k], R.lv[k], false));
+  }
+  if ($("shopOv").classList.contains("show")) renderShop();
+  refreshButtons();
+}
+function countList(keys, pool, cls) {
+  if (!keys.length) return '<span class="section-note" style="margin:0">None yet</span>';
+  const counts = {}; keys.forEach(k => counts[k] = (counts[k] || 0) + 1);
+  return Object.entries(counts).map(([k, n]) => '<button type="button" class="chip ' + cls + '" data-tip-title="' + pool[k].name + '" data-tip="' +
+    pool[k].text + (n > 1 ? " (picked " + n + " times, so it stacks)" : "") + '">' + pool[k].name + (n > 1 ? " ×" + n : "") + "</button>").join("");
+}
+// floating explanation card for anything with data-tip (Strain chips)
+function showFloatTip(el) {
+  const tip = $("floatTip");
+  tip.innerHTML = "<b>" + el.dataset.tipTitle + "</b>" + el.dataset.tip;
+  tip.classList.add("show");
+  const r = el.getBoundingClientRect(), w = tip.offsetWidth, hgt = tip.offsetHeight;
+  const left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+  const above = r.top - hgt - 8;
+  tip.style.left = left + "px";
+  tip.style.top = (above > 8 ? above : r.bottom + 8) + "px";
+}
+function hideFloatTip() { $("floatTip").classList.remove("show"); }
+document.addEventListener("mouseover", e => { const c = e.target.closest && e.target.closest("[data-tip]"); if (c) showFloatTip(c); });
+document.addEventListener("mouseout", e => { const c = e.target.closest && e.target.closest("[data-tip]"); if (c && !c.contains(e.relatedTarget)) hideFloatTip(); });
+document.addEventListener("focusin", e => { if (e.target.dataset && e.target.dataset.tip) showFloatTip(e.target); });
+document.addEventListener("focusout", e => { if (e.target.dataset && e.target.dataset.tip) hideFloatTip(); });
+document.addEventListener("click", e => { const c = e.target.closest && e.target.closest("[data-tip]"); if (c) showFloatTip(c); else hideFloatTip(); });
+function renderStrain(el) {
+  el.innerHTML =
+    '<p class="section-note">Run ' + G.runs + ". World " + R.world + ", " + R.kills + " kills, " + fmt(R.dna) + " DNA waiting to be paid out when this run ends. Best world ever: " + G.best + ".</p>" +
+    '<div class="section-title">Boons</div><div style="padding:0 6px">' + countList(R.boons, BOONS, "boon") + "</div>" +
+    '<div class="section-title">Curses</div><div style="padding:0 6px">' + countList(R.curses, CURSES, "curse") + "</div>" +
+    '<p class="section-note">Clear a world to draw cards. Lose all your viruses in one world and the run ends, which is when your DNA is paid out.</p>';
+}
+function renderEvolve(el) {
+  const n = document.createElement("p"); n.className = "section-note";
+  n.textContent = "DNA is permanent. You collect it during a run from kills, cleared worlds and bosses, and it's paid out when the run ends.";
+  el.appendChild(n);
+  for (const k in PERM) {
+    const d = PERM[k], l = G.p[k], maxed = l >= d.max;
+    if (d.needsBoss !== undefined && !G.bosses[d.needsBoss]) {
+      el.appendChild(makeRow({ name: d.name, text: "Defeat " + ZONES[d.needsBoss].boss + " to unlock. " + d.text, locked: true, btnText: "Locked", disabled: true, onClick: () => {} }));
+      continue;
+    }
+    el.appendChild(makeRow({ name: d.name, level: l, max: d.max, text: d.text, effNow: d.eff(l), effNext: maxed ? "" : d.eff(l + 1),
+      btnText: maxed ? "Max" : fmt(upCost(d, l)) + " DNA", disabled: maxed, extraClass: maxed ? "maxed" : "",
+      data: maxed ? null : { kind: "perm", key: k }, onClick: () => buyPerm(k) }));
+  }
+  const t = document.createElement("div"); t.className = "section-title"; t.textContent = "Automation"; el.appendChild(t);
+  el.appendChild(makeRow({ name: "Auto-choose", text: "If you don't decide within " + (autoOn("reflexes") ? "1 second" : FOCUS_WAIT + " seconds (" + BLUR_WAIT + " when the game isn't focused)") + ", the game places your virus, picks cards, and starts the next run for you. Picking a card yourself pauses it.",
+    btnText: G.settings.autoChoose ? "On" : "Off", extraClass: G.settings.autoChoose ? "on" : "",
+    onClick: () => { G.settings.autoChoose = !G.settings.autoChoose; R.autoT = 0; renderPanel(); updateHud(); save(); } }));
+  for (const k in AUTO) {
+    const d = AUTO[k], a = G.auto[k];
+    const locked = G.best < d.needs;
+    if (!a.owned) {
+      el.appendChild(makeRow({ name: d.name, text: locked ? "Reach world " + d.needs + " to unlock. " + d.text : d.text, locked,
+        btnText: locked ? "Locked" : d.cost + " DNA", disabled: locked, data: locked ? null : { kind: "auto", key: k },
+        onClick: () => { if (G.dna < d.cost || locked) return; G.dna -= d.cost; a.owned = true; a.on = true; renderPanel(); updateHud(); save(); } }));
+      continue;
+    }
+    const row = makeRow({ name: d.name, text: d.text,
+      btnText: d.toggle ? (a.on ? "On" : "Off") : "Owned", disabled: !d.toggle, extraClass: d.toggle && a.on ? "on" : "maxed",
+      onClick: () => { if (!d.toggle) return; a.on = !a.on; renderPanel(); save(); } });
+    for (const st of d.settings || []) {
+      const lab = document.createElement("label"); lab.className = "setting";
+      lab.textContent = st.label + " ";
+      const sel = document.createElement("select");
+      for (const [v, n] of st.opts) { const o = document.createElement("option"); o.value = v; o.textContent = n; if (G.settings[st.key] === v) o.selected = true; sel.appendChild(o); }
+      sel.addEventListener("change", () => { G.settings[st.key] = sel.value; save(); });
+      lab.appendChild(sel);
+      row.querySelector("p").appendChild(lab);
+    }
+    el.appendChild(row);
+  }
+}
+function refreshButtons() {
+  for (const b of document.querySelectorAll(".buy[data-kind]")) {
+    const k = b.dataset.key, kind = b.dataset.kind;
+    if (kind === "up") b.disabled = R.lf < runCost(UP[k], R.lv[k]);
+    else if (kind === "mut") b.disabled = R.lf < runCost(MUT[k], R.mu[k]);
+    else if (kind === "perm") b.disabled = G.dna < upCost(PERM[k], G.p[k]);
+    else if (kind === "auto") b.disabled = G.dna < AUTO[k].cost;
+  }
+}
+function buy(key, isMut, quiet) {
+  const def = isMut ? MUT[key] : UP[key];
+  const l = isMut ? R.mu[key] : R.lv[key];
+  if (l >= def.max || (isMut && !R.found[key])) return false;
+  const c = runCost(def, l);
+  if (R.lf < c) return false;
+  R.lf -= c;
+  if (isMut) R.mu[key]++; else R.lv[key]++;
+  checkMutations();
+  if (!silent && !quiet) { renderTabs(); renderPanel(); updateHud(); }
+  else if (!silent) panelDirty = true;
+  return true;
+}
+function buyPerm(k) {
+  const d = PERM[k], l = G.p[k];
+  if (l >= d.max) return;
+  const c = upCost(d, l);
+  if (G.dna < c) return;
+  G.dna -= c; G.p[k]++;
+  if (k === "lives" && R.phase !== "over") R.lives++;
+  if (k === "reroll") R.rerolls++;
+  renderPanel(); updateHud(); save();
+}
+let panelDirty = false;
+
+// ================= HUD =================
+let ladderKey = "";
+function renderLadder() {
+  const key = R.world + "|" + R.phase;
+  if (key === ladderKey) return; ladderKey = key;
+  let html = "";
+  for (let z = 0; z < ZONES.length; z++) {
+    html += '<span class="zone" title="Zone ' + (z + 1) + ": " + ZONES[z].name + '">';
+    for (let i = 1; i <= ZONE_SIZE; i++) {
+      const w = z * ZONE_SIZE + i;
+      const cls = ["pip"]; if (w === ZONE_SIZE * (z + 1)) cls.push("boss");
+      if (w < R.world) cls.push("done"); else if (w === R.world) cls.push("cur");
+      if (w > G.best) cls.push("unseen");
+      html += '<i class="' + cls.join(" ") + '"></i>';
+    }
+    html += "</span>";
+  }
+  $("ladder").innerHTML = html;
+}
+function updateHud() {
+  $("worldName").innerHTML = worldTitle(R.world) + " <small>World " + R.world + " of " + FINAL_WORLD + (R.asc ? ", Ascension " + R.asc : "") + "</small>";
+  renderLadder();
+  $("lf").textContent = fmt(R.lf);
+  $("dna").textContent = fmt(G.dna);
+  $("dnaPending").textContent = R.dna > 0 && !R.banked ? "+" + fmt(R.dna) + " at run end" : "";
+  rateWindow = rateWindow.filter(e => now - e[0] < 3);
+  $("rate").textContent = fmt(rateWindow.reduce((s, e) => s + e[1], 0) / 3);
+  const req = required();
+  $("hostsLeft").textContent = req.filter(h => !h.dead).length + " / " + req.length;
+  $("alert").textContent = pct(alertLevel());
+  $("cure").textContent = R.phase === "run" ? pct(Math.min(1, R.cure)) + " (" + Math.max(0, Math.ceil((1 - R.cure) * cureTime())) + "s)" : "waiting";
+  const ml = maxLives();
+  $("lives").textContent = "●".repeat(Math.max(0, R.lives)) + "○".repeat(Math.max(0, ml - R.lives));
+  // top-right status: what happens next
+  let next = "", act = false;
+  if (R.phase === "idle") next = "No run active";
+  else if (R.phase === "start" || R.phase === "cards") next = "Choosing cards";
+  else if (R.phase === "pick") { next = G.settings.autoChoose ? "Auto-placing in " + countdown() + "s" : "Place your next virus"; act = true; }
+  else if (R.phase === "run") next = "Cure lands in " + Math.max(0, Math.ceil((1 - R.cure) * cureTime())) + "s";
+  else if (R.phase === "over") next = "Run over";
+  $("hudNext").textContent = next;
+  $("hudNext").classList.toggle("act", act);
+  $("hudRight").style.visibility = R.phase === "idle" ? "hidden" : "visible";
+  if (menuOpen && Math.random() < 0.2) refreshMenuStatus();
+  updateCountdowns();
+  updateAutoBtn();
+  updateEvolveDot();
+  measureHud();
+}
+let toastTimer;
+function toast(msg, ms) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), ms || 2600);
+}
+
+// ================= render =================
+let C = {};
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  for (const k of ["slide", "cell", "membrane", "ink", "muted", "stain", "bruise", "life", "husk", "heal"]) C[k] = cs.getPropertyValue("--" + k).trim();
+}
+function draw() {
+  ctx.fillStyle = C.slide; ctx.fillRect(0, 0, W, H);
+  const Rr = baseRadius(), cap = stackCap(), picking = R.phase === "pick";
+
+  if (hover && !hover.dead) {
+    const [x, y] = hostPos(hover);
+    const rr = rangePx() * (hover.carrier && !hover.healer ? 1.6 : 1);
+    ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2);
+    ctx.setLineDash([4, 6]); ctx.strokeStyle = hover.healer ? C.heal : C.stain; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+  }
+  for (const L of links) {
+    const [ax, ay] = hostPos(L.a), [bx, by] = hostPos(L.b);
+    const grow = Math.min(1, L.t / 0.35);
+    const alpha = L.t < 0.35 ? 0.9 : Math.max(0, 0.9 - (L.t - 0.35) / 1.1);
+    const mx = (ax + bx) / 2 + (by - ay) * 0.15, my = (ay + by) / 2 - (bx - ax) * 0.15;
+    ctx.beginPath(); ctx.moveTo(ax, ay);
+    for (let i = 1; i <= 16 * grow; i++) {
+      const t = i / 16, u = 1 - t;
+      ctx.lineTo(u * u * ax + 2 * u * t * mx + t * t * bx, u * u * ay + 2 * u * t * my + t * t * by);
+    }
+    ctx.strokeStyle = L.a.healer ? C.heal : C.bruise; ctx.globalAlpha = alpha; ctx.lineWidth = 2; ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  R.hosts.forEach((h, i) => {
+    const [x, y] = hostPos(h);
+    const T = TYPES[h.type];
+    let r = Rr * hostSize(h);
+    if (h.dead) {
+      ctx.beginPath(); ctx.arc(x, y, r * 0.78, 0, Math.PI * 2);
+      ctx.fillStyle = C.husk; ctx.globalAlpha = 0.55; ctx.fill(); ctx.globalAlpha = 1;
+      return;
+    }
+    if (h.inf && !reduceMotion) r *= 1 + 0.04 * Math.sin(now * 3 + h.pulse);
+    if (h.boss !== undefined) {
+      // boss: reach ring for the Herbalist and Doctor, a crown ring, and its name
+      if (h.boss === 1 || h.boss === 3) {
+        ctx.beginPath(); ctx.arc(x, y, rangePx() * (h.boss === 1 ? h.healRange : 2.2), 0, Math.PI * 2);
+        ctx.setLineDash([2, 6]); ctx.strokeStyle = h.boss === 1 ? C.heal : C.ink; ctx.globalAlpha = 0.35 + (h.boss === 3 ? 0.4 * (h.docT / 8) : 0);
+        ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+      }
+      ctx.beginPath(); ctx.arc(x, y, r + 7, 0, Math.PI * 2);
+      ctx.strokeStyle = C.bruise; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = C.ink; ctx.textAlign = "center"; ctx.font = "800 13px 'Bricolage Grotesque', system-ui, sans-serif";
+      ctx.fillText(ZONES[h.boss].boss, x, y + r + 26);
+    }
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = h.vacc ? C.slide : C.cell; ctx.fill();
+    ctx.lineWidth = h.boss !== undefined ? 4 : T.stroke; ctx.strokeStyle = C.membrane;
+    if (h.vacc) ctx.setLineDash([3, 3]);
+    ctx.stroke(); ctx.setLineDash([]);
+    if (h.vacc) {
+      ctx.beginPath(); ctx.moveTo(x - r * 0.45, y + r * 0.45); ctx.lineTo(x + r * 0.45, y - r * 0.45);
+      ctx.strokeStyle = C.muted; ctx.lineWidth = 1.5; ctx.stroke();
+      return;
+    }
+    if (h.carrier) {
+      ctx.beginPath(); ctx.arc(x, y, r + 4, 0, Math.PI * 2);
+      ctx.setLineDash([1.5, 3.5]); ctx.strokeStyle = C.stain; ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]);
+    }
+    if (h.sentinel) {
+      const s = r + 3;
+      ctx.beginPath(); ctx.rect(x - s, y - s, s * 2, s * 2);
+      ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.stroke();
+    }
+    if (h.inf) {
+      const k = Math.min(1, h.stacks / cap);
+      ctx.beginPath(); ctx.arc(x, y, r * (0.3 + 0.62 * k), 0, Math.PI * 2);
+      ctx.fillStyle = C.bruise; ctx.globalAlpha = 0.35 + 0.55 * k; ctx.fill(); ctx.globalAlpha = 1;
+      if (h.stacks >= SHED_STACKS) {
+        ctx.beginPath(); ctx.arc(x, y, r * 0.95, 0, Math.PI * 2);
+        ctx.strokeStyle = C.bruise; ctx.lineWidth = 1.2; ctx.stroke();
+      }
+    }
+    if (h.healer) {
+      const s = Math.max(3, r * 0.4);
+      ctx.fillStyle = C.heal;
+      ctx.fillRect(x - s, y - s * 0.28, s * 2, s * 0.56); ctx.fillRect(x - s * 0.28, y - s, s * 0.56, s * 2);
+    } else {
+      ctx.beginPath(); ctx.arc(x, y, Math.max(1.5, r * 0.18), 0, Math.PI * 2);
+      ctx.fillStyle = C.stain; ctx.globalAlpha = h.inf ? 0.9 : 0.5; ctx.fill(); ctx.globalAlpha = 1;
+    }
+    if (h.resist > 0 && !h.inf) {
+      ctx.beginPath(); ctx.arc(x, y, r + 2.5, 0, Math.PI * 2);
+      ctx.setLineDash([3, 3]); ctx.strokeStyle = C.muted; ctx.lineWidth = 1.2; ctx.stroke(); ctx.setLineDash([]);
+    }
+    if (h.hp < h.max) {
+      ctx.beginPath(); ctx.arc(x, y, r + (h.carrier ? 8 : 4), -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (h.hp / h.max));
+      ctx.strokeStyle = C.life; ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.stroke(); ctx.lineCap = "butt";
+    }
+    if (picking && i === R.lastPz) {
+      ctx.fillStyle = C.muted; ctx.textAlign = "center"; ctx.font = "500 11px 'Bricolage Grotesque', system-ui, sans-serif";
+      ctx.fillText("last virus", x, y + r + 18);
+    }
+    if (hover === h && picking && canPlace(h)) {
+      ctx.beginPath(); ctx.arc(x, y, r + 2, 0, Math.PI * 2);
+      ctx.strokeStyle = C.bruise; ctx.lineWidth = 2.5; ctx.stroke();
+    }
+  });
+  ctx.textAlign = "center"; ctx.font = "600 13px 'Bricolage Grotesque', system-ui, sans-serif";
+  for (const f of floats) {
+    ctx.globalAlpha = Math.max(0, 1 - f.t / 1.4);
+    ctx.fillStyle = f.soft ? C.muted : C.life;
+    ctx.fillText(f.text, f.x, f.y - 14 - f.t * 26);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ================= loop =================
+let last = performance.now(), hudAcc = 0, saveAcc = 0, errShown = false;
+function frame(ts) {
+  try { tick(ts); }
+  catch (e) { if (!errShown) { errShown = true; toast("Something broke: " + e.message); console.error(e); } }
+  requestAnimationFrame(frame);
+}
+function tick(ts) {
+  let dt = (ts - last) / 1000; last = ts;
+  if (!(dt >= 0)) dt = 0;
+  if (dt > 1) { catchUp(dt); return; }
+  now += dt; step(dt); autoTick(dt);
+  links.forEach(l => l.t += dt); links = links.filter(l => l.t < 1.5);
+  floats.forEach(f => f.t += dt); floats = floats.filter(f => f.t < 1.4);
+  hudAcc += dt; saveAcc += dt;
+  if (hudAcc > 0.2) {
+    hudAcc = 0;
+    if (panelDirty) { panelDirty = false; if (tab !== "evolve") renderPanel(); renderTabs(); }
+    updateHud(); refreshButtons();
+  }
+  if (saveAcc > 5) { saveAcc = 0; save(); }
+  draw();
+}
+// offline / background progress
+function catchUp(secs) {
+  const total = Math.min(secs, 8 * 3600);
+  const before = { dna: G.dna, best: G.best, runs: G.runs };
+  const stepSize = total > 120 ? 0.5 : 0.1;
+  const n = Math.ceil(total / stepSize);
+  if (secs > 30) R.touched = false; // a long absence counts as leaving the choice to the game
+  silent = true;
+  try {
+    for (let i = 0; i < n; i++) {
+      now += stepSize;
+      if (R.phase === "run") step(stepSize);
+      autoTick(stepSize);
+      // nothing left to automate: stop early
+      if (R.phase === "idle" || (R.phase !== "run" && !G.settings.autoChoose)) break;
+    }
+  } finally { silent = false; }
+  links = []; floats = []; rateWindow = [];
+  $("overlay").classList.remove("show"); $("cardsOv").classList.remove("show");
+  if (R.phase === "cards" || R.phase === "start") showCards();
+  if (R.phase === "over") { if (R.stage === "shop") showShop(); else showRunOver(); }
+  renderTabs(); renderPanel(); updateHud(); save();
+  if (secs > 60) {
+    const parts = ["Away for " + fmtTime(secs) + "."];
+    parts.push("Earned " + fmt(G.dna - before.dna) + " DNA.");
+    if (G.runs > before.runs) parts.push(G.runs - before.runs + " new run" + (G.runs - before.runs > 1 ? "s" : "") + ".");
+    if (G.best > before.best) parts.push("New best: world " + G.best + ".");
+    awayNote = parts.join(" ");
+    if (menuOpen) showMenu(); else toast(awayNote);
+  }
+}
+
+// ================= save =================
+const KEY = "host-save-v3";
+function save() {
+  G.savedAt = Date.now();
+  try { localStorage.setItem(KEY, JSON.stringify({ G, R })); } catch (e) { $("saveNote").textContent = "Progress won't save in this browser"; }
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    if (!d || !d.G || !d.R || !Array.isArray(d.R.hosts)) return false;
+    G = Object.assign(newMeta(), d.G);
+    for (const k in PERM) if (typeof G.p[k] !== "number") G.p[k] = 0;
+    for (const k in AUTO) if (!G.auto[k]) G.auto[k] = { owned: false, on: true };
+    G.settings = Object.assign({}, DEFAULT_SETTINGS, G.settings || {});
+    // colors were re-assigned: main now tints the app, accent is buttons and the virus
+    if (!G.colorsV2) { G.settings.main = DEFAULT_SETTINGS.main; G.settings.accent = DEFAULT_SETTINGS.accent; G.colorsV2 = true; }
+    G.seen = Object.assign({ hosts: {}, bosses: {}, boons: {}, curses: {}, muts: {} }, G.seen || {});
+    G.bosses = G.bosses || {};
+    R = d.R;
+    for (const h of R.hosts) if (h.type === "carrier") { h.type = "common"; h.carrier = true; }
+    for (const k in UP) if (typeof R.lv[k] !== "number") R.lv[k] = 0;
+    for (const k in MUT) if (typeof R.mu[k] !== "number") R.mu[k] = 0;
+    recomputeMods();
+    return true;
+  } catch (e) { return false; }
+}
+document.addEventListener("visibilitychange", () => { if (document.hidden) save(); });
+window.addEventListener("pagehide", save);
+
+// run footer: Strain and Evolve open as popups
+$("evolveBtn").addEventListener("click", () => { shopFromRun = true; showShop(); });
+$("strainBtn").addEventListener("click", showStrain);
+function showStrain() {
+  const el = $("strainList"); el.innerHTML = ""; renderStrain(el);
+  const ab = $("strainAbandon"); ab.dataset.armed = ""; ab.textContent = "Abandon run"; ab.disabled = !runActive();
+  $("strainOv").classList.add("show");
+}
+// abandon needs a second tap within 4 seconds, so it can't happen by accident
+let abandonTimer;
+$("strainAbandon").addEventListener("click", () => {
+  const ab = $("strainAbandon");
+  if (!ab.dataset.armed) {
+    ab.dataset.armed = "1"; ab.textContent = "Tap again to abandon";
+    clearTimeout(abandonTimer); abandonTimer = setTimeout(() => { ab.dataset.armed = ""; ab.textContent = "Abandon run"; }, 4000);
+    return;
+  }
+  clearTimeout(abandonTimer); hideFloatTip();
+  $("strainOv").classList.remove("show");
+  if (runActive()) { R.lives = 0; runOver(); }
+});
+$("strainClose").addEventListener("click", () => { hideFloatTip(); $("strainOv").classList.remove("show"); });
+// a pink dot on Evolve when you can afford something there
+function updateEvolveDot() {
+  const can = Object.keys(PERM).some(k => { const d = PERM[k]; return G.p[k] < d.max && (d.needsBoss === undefined || G.bosses[d.needsBoss]) && G.dna >= upCost(d, G.p[k]); }) ||
+    Object.keys(AUTO).some(k => !G.auto[k].owned && G.best >= AUTO[k].needs && G.dna >= AUTO[k].cost);
+  $("evolveBtn").classList.toggle("ready", can);
+}
+// phones: the upgrade panel can expand to take most of the screen
+function setExpanded(ex) {
+  document.querySelector(".app").classList.toggle("expanded", ex);
+  $("panelHandle").setAttribute("aria-expanded", ex);
+  $("panelHandle").querySelector("span").textContent = ex ? "Collapse upgrades" : "Expand upgrades";
+}
+const isExpanded = () => document.querySelector(".app").classList.contains("expanded");
+$("panelHandle").addEventListener("click", () => setExpanded(!isExpanded()));
+// tapping the arena while the panel is expanded just brings the panel back down
+stage.addEventListener("pointerdown", e => {
+  if (!isExpanded()) return;
+  e.stopPropagation(); e.preventDefault(); setExpanded(false);
+}, true);
+// ================= menus =================
+let menuOpen = false, shopFromMenu = false, shopFromRun = false, awayNote = "";
+const runActive = () => R.phase !== "idle" && R.phase !== "over";
+function idleRun() {
+  const lv = {}; for (const k in UP) lv[k] = 0;
+  const mu = {}; for (const k in MUT) mu[k] = 0;
+  R = { world: 1, lf: 0, lv, mu, found: {}, boons: [], curses: [], seed: Math.floor(Math.random() * 1e9), hosts: [], phase: "idle", cure: 0,
+    elapsed: 0, asc: 0, lives: 0, kills: 0, dna: 0, autoT: 0, lastPz: -1, flareT: 0 };
+  recomputeMods(); generateWorld();
+}
+function menuStatusHtml() {
+  let h = runActive()
+    ? "<b>Run " + G.runs + " is active.</b> " + worldTitle(R.world) + ", world " + R.world + " of " + FINAL_WORLD + ", " +
+      Math.max(0, R.lives) + " virus" + (R.lives === 1 ? "" : "es") + " left. Auto is " + (G.settings.autoChoose ? "on, so it keeps playing while you're here." : "off.")
+    : G.runs ? "<b>No run active.</b> Your last run reached world " + R.world + "." : "<b>No run yet.</b> Start one below.";
+  if (awayNote) h += '<span class="away">' + awayNote + "</span>";
+  return h;
+}
+function showMenu() {
+  menuOpen = true; menuWasActive = runActive();
+  const st = $("menuStatus"), acts = $("menuActions"); acts.innerHTML = "";
+  st.innerHTML = menuStatusHtml();
+  const btn = (label, cls, fn) => { const b = document.createElement("button"); b.className = "bar-btn " + cls; b.textContent = label; b.addEventListener("click", fn); acts.appendChild(b); return b; };
+  if (runActive()) {
+    btn("Continue", "primary", hideMenu);
+    btn("Abandon run", "quiet", () => { hideMenu(); R.lives = 0; runOver(); });
+  } else {
+    btn("Play", "primary", () => { G.settings.autoChoose = false; hideMenu(); startNewRun(); });
+    btn("AFK run", "afk", () => { G.settings.autoChoose = true; hideMenu(); startNewRun(); });
+  }
+  // ascension
+  const asc = $("ascRow");
+  if (G.ascMax > 0) {
+    asc.style.display = "";
+    const sel = $("ascSel"); sel.innerHTML = "";
+    for (let a = 0; a <= G.ascMax; a++) { const o = document.createElement("option"); o.value = a; o.textContent = a ? "Ascension " + a : "Normal"; if (a === G.asc) o.selected = true; sel.appendChild(o); }
+  } else asc.style.display = "none";
+  const bosses = Object.keys(G.bosses).length;
+  $("menuStats").innerHTML = "Best world <b>" + G.best + "</b> of " + FINAL_WORLD + (G.wins ? ", won <b>" + G.wins + "×</b>" : "") + "<br>" +
+    "Bosses <b>" + bosses + "</b> of " + ZONES.length + "<br>" + "<b>" + G.runs + "</b> runs, <b>" + fmt(G.dnaTotal) + "</b> DNA earned";
+  $("menu").classList.add("show");
+  startMenuBg();
+}
+// sub-screens (settings, codex, how to play) cover the menu instead of stacking on top of it
+function openSub(id) { $(id).classList.add("show"); $("menu").classList.add("under"); startMenuBg(); }
+function closeSub(id) { $(id).classList.remove("show"); if (!["intro", "codex", "settings"].some(k => $(k).classList.contains("show"))) $("menu").classList.remove("under"); }
+const screenOpen = () => ["menu", "intro", "codex", "settings"].some(id => $(id).classList.contains("show"));
+function hexA(hex, a) {
+  const m = hex.replace("#", ""), n = m.length === 3 ? m.split("").map(c => c + c).join("") : m;
+  const v = parseInt(n, 16); return "rgba(" + (v >> 16 & 255) + "," + (v >> 8 & 255) + "," + (v & 255) + "," + a + ")";
+}
+// drifting, stained cells behind the main menu
+let menuBgOn = false;
+function startMenuBg() {
+  if (menuBgOn) return; menuBgOn = true;
+  const c = $("fxBg"), x = c.getContext("2d");
+  c.classList.add("show");
+  const blobs = Array.from({ length: 9 }, (_, i) => ({ a: Math.random() * 6.28, b: Math.random() * 6.28, sa: 0.04 + Math.random() * 0.05, sb: 0.03 + Math.random() * 0.05, r: 0.25 + Math.random() * 0.3, k: i % 3 }));
+  const cells = Array.from({ length: 22 }, () => ({ x: Math.random(), y: Math.random(), r: 8 + Math.random() * 26, vx: (Math.random() - 0.5) * 0.008, vy: (Math.random() - 0.5) * 0.008, p: Math.random() * 6.28 }));
+  let t0 = performance.now();
+  function frame(ts) {
+    if (!screenOpen()) { menuBgOn = false; c.classList.remove("show"); return; }
+    const t = reduceMotion ? 0 : (ts - t0) / 1000;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2), w = c.clientWidth, h = c.clientHeight;
+    if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+    x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const cs = getComputedStyle(document.documentElement);
+    const bg = cs.getPropertyValue("--bg").trim(), cols = [cs.getPropertyValue("--stain").trim(), cs.getPropertyValue("--bruise").trim(), cs.getPropertyValue("--membrane").trim()];
+    x.fillStyle = bg; x.fillRect(0, 0, w, h);
+    const m = Math.max(w, h);
+    for (const bl of blobs) {
+      const px = w / 2 + Math.cos(bl.a + t * bl.sa) * w * 0.42, py = h / 2 + Math.sin(bl.b + t * bl.sb) * h * 0.42, rr = bl.r * m;
+      const g = x.createRadialGradient(px, py, 0, px, py, rr);
+      g.addColorStop(0, hexA(cols[bl.k], 1)); g.addColorStop(1, hexA(cols[bl.k], 0));
+      x.globalAlpha = 0.22; x.fillStyle = g; x.beginPath(); x.arc(px, py, rr, 0, Math.PI * 2); x.fill();
+    }
+    x.globalAlpha = 0.35; x.lineWidth = 1.5;
+    for (const ce of cells) {
+      const px = ((ce.x + ce.vx * t) % 1 + 1) % 1 * w, py = ((ce.y + ce.vy * t) % 1 + 1) % 1 * h, rr = ce.r * (1 + 0.05 * Math.sin(t * 2 + ce.p));
+      x.beginPath(); x.arc(px, py, rr, 0, Math.PI * 2); x.strokeStyle = cols[2]; x.stroke();
+      x.beginPath(); x.arc(px, py, rr * 0.2, 0, Math.PI * 2); x.fillStyle = cols[0]; x.fill();
+    }
+    x.globalAlpha = 1;
+    requestAnimationFrame(frame); // keeps running so it notices when screens close; drawing is static under reduced motion
+  }
+  requestAnimationFrame(frame);
+}
+// light refresh while the menu is open: rebuild buttons only if the run started or ended
+let menuWasActive = null;
+function refreshMenuStatus() {
+  if (!menuOpen) return;
+  if (runActive() !== menuWasActive) { showMenu(); return; }
+  $("menuStatus").innerHTML = menuStatusHtml();
+}
+function hideMenu() { menuOpen = false; awayNote = ""; $("menu").classList.remove("show"); updateHud(); }
+$("ascSel").addEventListener("change", e => { G.asc = +e.target.value; save(); });
+$("settingsBtn").addEventListener("click", () => { renderSettings(); renderSwatches(); openSub("settings"); });
+$("toMenu").addEventListener("click", () => { closeSub("settings"); showMenu(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") { if ($("strainOv").classList.contains("show")) $("strainOv").classList.remove("show"); else if ($("settings").classList.contains("show")) closeSub("settings"); else if ($("codex").classList.contains("show")) closeSub("codex"); else if (menuOpen && runActive()) hideMenu(); else showMenu(); } });
+$("mEvolve").addEventListener("click", () => { shopFromMenu = true; $("shopOv").classList.add("from-menu"); showShop(); });
+$("mCodex").addEventListener("click", showCodex);
+$("mHow").addEventListener("click", () => { $("introGo").textContent = "Back"; openSub("intro"); });
+$("introGo").addEventListener("click", () => { G.introSeen = true; closeSub("intro"); save(); showMenu(); });
+$("codexBack").addEventListener("click", () => closeSub("codex"));
+
+function showCodex() {
+  const sections = [
+    ["Hosts", Object.keys(HOST_INFO).filter(k => k !== "boss"), k => G.seen.hosts[k], k => HOST_INFO[k][0], k => HOST_INFO[k][1]],
+    ["Bosses", ZONES.map((_, i) => i), k => G.seen.bosses[k], k => ZONES[k].boss, k => ZONES[k].bossText + (G.bosses[k] ? " Defeated. " + ZONES[k].reward + "." : " Reward: " + ZONES[k].reward + ".")],
+    ["Boons", Object.keys(BOONS), k => G.seen.boons[k], k => BOONS[k].name, k => BOONS[k].text],
+    ["Curses", Object.keys(CURSES), k => G.seen.curses[k], k => CURSES[k].name, k => CURSES[k].text],
+    ["Mutations", Object.keys(MUT), k => G.seen.muts[k], k => MUT[k].name, k => MUT[k].text + ". Needs " + Object.entries(MUT[k].needs).map(([u, n]) => UP[u].name + " " + n).join(" and ") + "."]
+  ];
+  let total = 0, found = 0, html = "";
+  for (const [title, keys, seen, name, text] of sections) {
+    const f = keys.filter(k => seen(k)).length; total += keys.length; found += f;
+    html += '<div class="cx-sec"><h3>' + title + ' <span>' + f + " / " + keys.length + "</span></h3><div class='cx-grid'>";
+    for (const k of keys) html += seen(k) ? '<div class="cx"><b>' + name(k) + "</b><span>" + text(k) + "</span></div>" : '<div class="cx locked"><b>???</b><span>Not discovered yet.</span></div>';
+    html += "</div></div>";
+  }
+  $("codexCount").textContent = found + " / " + total + " discovered";
+  $("codexList").innerHTML = html;
+  openSub("codex");
+}
+
+$("noReset").addEventListener("click", () => $("confirm").classList.remove("show"));
+$("mErase").addEventListener("click", () => { $("confirm").classList.add("show"); $("noReset").focus(); });
+const SET_OPTS = {
+  autoChoose: [[true, "On"], [false, "Off"]],
+  floats: [[true, "On"], [false, "Off"]],
+  theme: [["system", "System"], ["light", "Light"], ["dark", "Dark"]],
+  motion: [["full", "Full"], ["reduced", "Reduced"]]
+};
+// ---- theme colors ----
+// Main color tints the whole app: backgrounds, panels, cells, borders, the button tray and the menu backdrop.
+// Accent color is everything you act on or watch: buttons, tabs, boons, the virus itself and highlights.
+const MAIN_PRESETS = [["#D6336C", "Rose"], ["#8E5BD6", "Lavender"], ["#3A86D9", "Sky"], ["#2FA58C", "Mint"], ["#C8963E", "Sand"], ["#E0603E", "Coral"], ["#6B7A8F", "Slate"]];
+const ACCENT_PRESETS = [["#6A2FA0", "Purple"], ["#A3245F", "Pink"], ["#B3261E", "Red"], ["#C2621B", "Orange"], ["#1F7A6C", "Teal"], ["#1F6FB2", "Blue"], ["#2F7A3A", "Green"]];
+function hexRgb(hex) { const n = parseInt(hex.replace("#", ""), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function rgbHex(r) { return "#" + r.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join(""); }
+function mixHex(a, b, t) { const x = hexRgb(a), y = hexRgb(b); return rgbHex(x.map((v, i) => v + (y[i] - v) * t)); }
+function hexHsl(hex) {
+  let [r, g, b] = hexRgb(hex).map(v => v / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2;
+  if (mx === mn) return [0, 0, l];
+  const d = mx - mn, s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+  let h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h * 60, s, l];
+}
+function hsl(h, s, l) { // s and l in 0..1, returns hex
+  s = Math.max(0, Math.min(1, s)); const a = s * Math.min(l, 1 - l);
+  const f = n => { const k = (n + h / 30) % 12; return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); };
+  return rgbHex([f(0), f(8), f(4)].map(v => v * 255));
+}
+function isDark() {
+  const t = G.settings.theme;
+  return t === "dark" || (t !== "light" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+}
+function applyColors() {
+  const main = G.settings.main || DEFAULT_SETTINGS.main, acc = G.settings.accent || DEFAULT_SETTINGS.accent, dark = isDark();
+  const [h, sat] = hexHsl(main), k = Math.min(1.4, sat / 0.6); // k: how strongly the base is tinted
+  const st = document.documentElement.style, set = (n, v) => st.setProperty("--" + n, v);
+  if (dark) {
+    set("bg", hsl(h, 0.32 * k, 0.07)); set("slide", hsl(h, 0.26 * k, 0.10)); set("cell", hsl(h, 0.22 * k, 0.18)); set("membrane", hsl(h, 0.2 * k, 0.30));
+    set("line", hsl(h, 0.18 * k, 0.21)); set("panel", hsl(h, 0.24 * k, 0.12)); set("husk", hsl(h, 0.08 * k, 0.28));
+    set("ink", hsl(h, 0.3 * k, 0.93)); set("muted", hsl(h, 0.1 * k, 0.63)); set("tray", hsl(h, 0.35 * k, 0.05));
+  } else {
+    set("bg", hsl(h, 0.47 * k, 0.91)); set("slide", hsl(h, 0.55 * k, 0.96)); set("cell", hsl(h, 0.64 * k, 0.88)); set("membrane", hsl(h, 0.29 * k, 0.71));
+    set("line", hsl(h, 0.35 * k, 0.84)); set("panel", hsl(h, 0.6 * k, 0.985)); set("husk", hsl(h, 0.08 * k, 0.72));
+    set("ink", hsl(h, 0.38 * k, 0.14)); set("muted", hsl(h, 0.11 * k, 0.44)); set("tray", hsl(h, 0.38 * k, 0.15));
+  }
+  // accent: buttons and the virus. A darker shade for the cell nucleus, a warmer twin for curses and the Auto button.
+  const virus = dark ? mixHex(acc, "#ffffff", 0.35) : acc;
+  set("main", acc);
+  set("btn", dark ? mixHex(acc, "#ffffff", 0.2) : acc);
+  set("stain", dark ? mixHex(acc, "#ffffff", 0.5) : mixHex(acc, "#000000", 0.2));
+  set("bruise", virus);
+  set("accent", mixHex(acc, "#C0204A", 0.45));
+  set("accent-hi", mixHex(acc, "#ffffff", 0.4));
+  // lifeforce: the big counter, health rings around hosts and the floating +numbers
+  set("life", dark ? mixHex(acc, "#ffffff", 0.4) : mixHex(acc, "#ff3366", 0.15));
+}
+if (window.matchMedia) { const mqc = matchMedia("(prefers-color-scheme: dark)"); if (mqc.addEventListener) mqc.addEventListener("change", () => { if (G) { applyColors(); readColors(); } }); }
+function renderSwatches() {
+  for (const box of document.querySelectorAll("#settings .swatches")) {
+    const key = box.dataset.color, list = key === "main" ? MAIN_PRESETS : ACCENT_PRESETS;
+    box.innerHTML = "";
+    const cur = (G.settings[key] || "").toUpperCase();
+    for (const [hex, name] of list) {
+      const b = document.createElement("button"); b.className = "swatch"; b.style.background = hex; b.title = name; b.setAttribute("aria-label", name);
+      b.setAttribute("aria-pressed", cur === hex.toUpperCase());
+      b.addEventListener("click", () => { G.settings[key] = hex; applySettings(); renderSwatches(); save(); });
+      box.appendChild(b);
+    }
+    const custom = document.createElement("label"); custom.className = "swatch custom"; custom.title = "Pick any color";
+    const isCustom = !list.some(([hex]) => hex.toUpperCase() === cur);
+    if (isCustom) { custom.style.background = G.settings[key]; custom.setAttribute("aria-pressed", "true"); }
+    const inp = document.createElement("input"); inp.type = "color"; inp.value = G.settings[key] || "#6A2FA0"; inp.setAttribute("aria-label", "Pick any color");
+    inp.addEventListener("input", () => { G.settings[key] = inp.value.toUpperCase(); applySettings(); });
+    inp.addEventListener("change", () => { renderSwatches(); save(); });
+    custom.appendChild(inp); box.appendChild(custom);
+  }
+}
+function applySettings() {
+  const t = G.settings.theme;
+  if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+  applyColors();
+  reduceMotion = sysReduce || G.settings.motion === "reduced";
+  document.documentElement.classList.toggle("rm", G.settings.motion === "reduced");
+  readColors();
+}
+function renderSettings() {
+  $("menuRowNote").textContent = menuOpen ? "You're already on the main menu." : runActive()
+    ? "Leave the arena for the main menu. Your run keeps its place" + (G.settings.autoChoose ? " and keeps playing." : ".") : "Go back to the main menu.";
+  $("toMenu").disabled = menuOpen;
+  for (const seg of document.querySelectorAll("#settings .seg")) {
+    const key = seg.dataset.set; seg.innerHTML = "";
+    for (const [v, label] of SET_OPTS[key]) {
+      const b = document.createElement("button"); b.textContent = label;
+      b.setAttribute("aria-pressed", G.settings[key] === v);
+      b.addEventListener("click", () => { G.settings[key] = v; if (key === "autoChoose") R.autoT = 0; applySettings(); renderSettings(); updateHud(); save(); });
+      seg.appendChild(b);
+    }
+  }
+}
+$("mSettings").addEventListener("click", () => { renderSettings(); renderSwatches(); openSub("settings"); });
+// full screen in the browser (the Android app is always full screen)
+const fsSupported = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+function updateFsBtn() {
+  const inFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  $("fsRow").style.display = fsSupported && !window.Capacitor ? "" : "none";
+  $("fsBtn").textContent = inFs ? "Exit full screen" : "Go full screen";
+}
+$("fsBtn").addEventListener("click", () => {
+  const el = document.documentElement;
+  if (document.fullscreenElement || document.webkitFullscreenElement) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  else (el.requestFullscreen || el.webkitRequestFullscreen).call(el).catch?.(() => toast("Your browser blocked full screen here."));
+});
+document.addEventListener("fullscreenchange", updateFsBtn);
+updateFsBtn();
+$("resetColors").addEventListener("click", () => { G.settings.main = DEFAULT_SETTINGS.main; G.settings.accent = DEFAULT_SETTINGS.accent; applySettings(); renderSwatches(); save(); });
+$("settingsBack").addEventListener("click", () => closeSub("settings"));
+$("yesReset").addEventListener("click", () => {
+  for (const id of ["confirm", "overlay", "cardsOv", "shopOv"]) $(id).classList.remove("show");
+  closeSub("settings");
+  G = newMeta(); idleRun(); tab = "potency"; renderTabs(); renderPanel(); updateHud(); save(); showMenu();
+});
+
+if (window.matchMedia) { const mq = matchMedia("(prefers-color-scheme: dark)"); if (mq.addEventListener) mq.addEventListener("change", readColors); }
+new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+// ================= boot =================
+window.addEventListener("resize", resize);
+new ResizeObserver(resize).observe(stage);
+resize(); readColors();
+let away = 0;
+if (load()) { away = (Date.now() - (G.savedAt || Date.now())) / 1000; }
+else { G = newMeta(); idleRun(); }
+buildLegend();
+renderTabs(); renderPanel(); updateHud();
+if (away > 5) catchUp(away);
+else if (R.phase === "cards" || R.phase === "start") showCards();
+else if (R.phase === "over") { if (R.stage === "shop") showShop(); else showRunOver(); }
+applySettings();
+if (!G.introSeen) { $("intro").classList.add("show"); startMenuBg(); } else showMenu();
+if (document.fonts) document.fonts.ready.then(readColors);
+window.__host = { get G() { return G; }, get R() { return R; }, UP, startNewRun, recomputeMods, hostPos, rangePx, renderPanel: () => renderPanel(), step, autoTick, catchUp, buyPerm, PERM, AUTO, upCost,
+  setSilent: v => { silent = v; } };
+requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
+})();
+
+</script>
+</body>
+</html>
