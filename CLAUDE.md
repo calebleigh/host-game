@@ -104,8 +104,9 @@ Phases (`R.phase`): `idle` (no run), `start` (opening card pick), `pick` (place 
 - Cards: at the start of every run and after every cleared world, pick one boon and one curse. Every card has
   3 levels (`v: [I, II, III]` totals in `BOONS`/`CURSES`): picking a card you already have raises its level, level I
   is small and II/III are big. Level = how many times it was picked, capped at 3 (`cardLevel`); cards at III aren't
-  offered again. Owned cards show as icons with Roman numerals in a column down the left of the arena (`renderCardCol`,
-  icons in `CARD_ICONS`), boons first, then curses; tap or hover for what they do.
+  offered again. Owned cards show as icons with Roman numerals (`renderCardCol`, icons in `CARD_ICONS`), boons first, then
+  curses; tap or hover for what they do. Bigger screens: a column down the left of the arena (`#cardCol`, the field
+  keeps `CARD_COL` px for it). Phones: a sideways-scrolling row under the overview card (`#cardRow`).
 
 Current tuning constants (top of the script): `worldHp = 180 * 2.6^(w-1)`, `CURE_BASE 120`, `CURE_SHRINK 1.05`,
 `COST_GROWTH 2.6` (matches host health growth, so lifeforce never gets relatively cheaper), `DNA_GROWTH 1.45`, `YIELD 0.3`, cleanse `0.05 * 1.25^(w-1)`, alert push ramps from 1x in

@@ -543,6 +543,17 @@ html.rm *, html.rm *::before, html.rm *::after { animation: none !important; tra
 .cardchip:hover { color: var(--ink); }
 .cardchip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2px; }
 .cardcol .sep { display: block; width: 18px; height: 1px; margin: 1px 6px; background: var(--line); }
+.cardrow { display: none; }
+@media (max-width: 760px), (orientation: portrait) and (max-width: 1000px) {
+  .cardcol { display: none; }
+  /* one row under the overview card, scrolling sideways when a long run has lots of cards */
+  .cardrow { display: flex; align-items: center; gap: 7px; margin: 0 10px 6px; padding: 2px 7px 7px 2px; overflow-x: auto; scrollbar-width: none; }
+  .cardrow::-webkit-scrollbar { display: none; }
+  .cardrow:empty { display: none; }
+  .cardrow .cardchip { flex: 0 0 auto; width: 28px; height: 28px; }
+  .cardrow .cardchip svg { width: 15px; height: 15px; }
+  .cardrow .sep { flex: 0 0 auto; width: 1px; height: 20px; background: var(--line); }
+}
 .foot-btn {
   position: relative; font: inherit; font-weight: 800; font-size: 0.85rem; border: 0; border-radius: 6px; padding: 8px 14px; cursor: pointer; box-shadow: var(--lift);
 }
@@ -763,6 +774,7 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
         <div>Cure <b id="cure">0%</b></div>
       </div>
     </div>
+    <div class="cardrow" id="cardRow" aria-label="Your boons and curses"></div>
     <div class="tabs" role="tablist" id="tabs"></div>
     <div class="list" id="list" role="tabpanel"></div>
   </aside>
@@ -1142,8 +1154,9 @@ function measureHud() {
 function field() {
   const m = Math.max(16, Math.min(30, H * 0.06)); // clearance for host radius, rings and labels (hosts are smaller on short arenas)
   const top = hudBottom + m, bottom = (legendTop || H - PAD_BOT) - m;
-  // the left side keeps room for the card column (always, so the map never jumps when a card is added)
-  return { x: PAD_X + 14 + CARD_COL, y: top, w: Math.max(50, W - (PAD_X + 14) * 2 - CARD_COL), h: Math.max(50, bottom - top) };
+  // bigger screens keep room on the left for the card column (always, so the map never jumps when a card is added)
+  const col = cardsInPanel() ? 0 : CARD_COL;
+  return { x: PAD_X + 14 + col, y: top, w: Math.max(50, W - (PAD_X + 14) * 2 - col), h: Math.max(50, bottom - top) };
 }
 // Every world lives in a fixed 1.4 : 1 space, so host layout and distances are the same on any screen.
 // It's scaled uniformly to fit the play field, and turned sideways when the field is taller than wide.
@@ -2344,10 +2357,13 @@ const CARD_ICONS = {
   lean: '<path d="M12 4v15M6 13l6 6 6-6"/>'
 };
 let cardColKey = "";
+// phones show the icons in a row under the overview card; bigger screens show a column down the arena
+const cardsInPanel = () => !!(hudMq && hudMq.matches);
 function renderCardCol() {
-  const key = R.phase + "|" + R.boons.join() + "|" + R.curses.join();
+  const key = R.phase + "|" + R.boons.join() + "|" + R.curses.join() + "|" + cardsInPanel();
   if (key === cardColKey) return; cardColKey = key;
-  const el = $("cardCol"); el.innerHTML = "";
+  $("cardCol").innerHTML = ""; $("cardRow").innerHTML = "";
+  const el = cardsInPanel() ? $("cardRow") : $("cardCol");
   if (R.phase === "idle") return;
   const add = (kind, k) => {
     const d = cardDef(kind, k), l = cardLevel(kind, k), b = document.createElement("button");
