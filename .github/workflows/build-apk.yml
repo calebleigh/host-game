@@ -25,9 +25,15 @@ jobs:
           java-version: 21
 
       - uses: android-actions/setup-android@v3
+        with:
+          # the old default ("tools") no longer exists, so name what we need
+          packages: platform-tools platforms;android-36
 
       - name: Install Capacitor
         run: npm ci
+
+      - name: Stamp the build number and repo into the game (for the in-app update check)
+        run: sed -i "s/__HOST_BUILD__/${{ github.run_number }}/; s#__HOST_REPO__#${{ github.repository }}#" www/index.html
 
       - name: Copy the game into the Android project
         run: npx cap sync android

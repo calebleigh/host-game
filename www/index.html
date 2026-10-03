@@ -26,8 +26,11 @@
   --heal: #1F7A6C;
   --tray: #2E1938;
   box-sizing: border-box;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* safe areas: the browser's env() values, or the ones the Android app injects */
+  --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  --sal: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
+  --sar: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -227,7 +230,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 #shopOv.from-menu { z-index: 45; }
 .screen {
   position: fixed; inset: 0; z-index: 40; display: none; overflow-y: auto; background: var(--bg);
-  padding: calc(24px + env(safe-area-inset-top, 0px)) 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  padding: calc(24px + var(--sat)) 20px calc(24px + var(--sab));
 }
 .screen.show { display: block; }
 .screen-inner { max-width: 560px; margin: 0 auto; }
@@ -235,7 +238,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 #menuBg { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 .menu-layout {
   position: relative; min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-  gap: 24px; padding: calc(5vh + env(safe-area-inset-top, 0px)) 20px calc(22px + env(safe-area-inset-bottom, 0px));
+  gap: 24px; padding: calc(5vh + var(--sat)) 20px calc(22px + var(--sab));
 }
 .menu-hero { text-align: center; margin: auto 0; width: 100%; max-width: 620px; }
 .menu-screen .wordmark { font-size: clamp(5rem, 19vw, 12rem); margin: 0; text-shadow: 0 6px 0 var(--panel), 0 10px 30px color-mix(in srgb, var(--ink) 25%, transparent); }
@@ -449,7 +452,7 @@ html.rm *, html.rm *::before, html.rm *::after { animation: none !important; tra
   .panel { transition: height .2s ease; }
   .app.expanded .panel {
     position: fixed; left: 0; right: 0; bottom: 0; height: 80%; z-index: 15;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: var(--sab);
     border-radius: 14px 14px 0 0; box-shadow: 0 -12px 36px color-mix(in srgb, var(--ink) 25%, transparent);
   }
   .panel-handle {
@@ -503,7 +506,7 @@ html.rm *, html.rm *::before, html.rm *::after { animation: none !important; tra
 .set-group > .set-row:first-child { border-top: 0; }
 .set-row .cta { white-space: nowrap; flex-shrink: 0; }
 /* settings, codex and how to play use the same sheet as Evolve: header, scrolling body, button always visible */
-.sheet-screen { padding: calc(16px + env(safe-area-inset-top, 0px)) 14px calc(16px + env(safe-area-inset-bottom, 0px)); overflow: hidden; }
+.sheet-screen { padding: calc(16px + var(--sat)) 14px calc(16px + var(--sab)); overflow: hidden; }
 .sheet-screen.show { display: grid; place-items: center; }
 .sheet {
   position: relative; width: 100%; max-width: 600px; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px);
@@ -538,6 +541,67 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
 .swatch.custom { position: relative; overflow: hidden; background: conic-gradient(#e33, #ec3, #3c6, #3ae, #93e, #e33); }
 .swatch.custom input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; border: 0; padding: 0; }
 .dna-pending { font-weight: 600; font-size: 0.78rem; color: var(--muted); margin-left: 4px; white-space: nowrap; }
+.legend i.immune { background: var(--cell); border: 2px solid var(--heal); }
+/* sheets size to the real screen, including short ones like folding phones */
+.sheet-screen.show { display: flex; align-items: center; justify-content: center; }
+.sheet { max-height: 100%; }
+@media (max-height: 640px) { .sheet-screen { padding-top: calc(8px + var(--sat)); padding-bottom: calc(8px + var(--sab)); } .sheet { padding: 12px 14px 10px; } .sheet-head h2 { font-size: 1.3rem; } }
+/* ---- how to play guide ---- */
+#intro .sheet { max-width: 680px; }
+#intro .wordmark { font-size: clamp(2.6rem, 9vw, 3.6rem); margin: 6px 0 0; }
+#intro .tagline { margin: 2px 0 10px; }
+.g-lead { margin: 0 0 6px; line-height: 1.5; }
+.g-sec { padding: 14px 0; border-top: 1px solid var(--line); }
+.g-sec h3 { margin: 0 0 8px; font-size: 1.05rem; }
+.g-sec p { margin: 8px 0 0; line-height: 1.5; color: var(--ink); font-size: 0.93rem; }
+.g-sec p b { color: var(--bruise); }
+.g-vis { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--slide); }
+.g-canvas { position: static; display: block; width: 100%; height: 130px; inset: auto; }
+.g-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
+.g-cards .pcard { min-height: 0; cursor: default; }
+.g-auto { padding: 14px; display: flex; justify-content: center; }
+.g-autobtn { background: var(--accent); color: #fff; font-weight: 800; font-size: 0.85rem; padding: 7px 12px; border-radius: 6px; box-shadow: var(--lift); }
+/* ---- codex ---- */
+.cx-tools { padding: 10px 0 6px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--line); }
+.cx-tools input { font: inherit; font-size: 0.95rem; color: var(--ink); background: var(--slide); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; }
+.cx-tools input:focus-visible { outline: 2px solid var(--bruise); outline-offset: 1px; }
+.cx-tabs { display: flex; flex-wrap: wrap; gap: 4px; background: var(--tray); border-radius: 8px; padding: 4px; }
+.cx-tabs button { flex: 1 1 auto; font: inherit; font-weight: 700; font-size: 0.78rem; color: rgba(255,255,255,0.72); background: none; border: 0; border-radius: 5px; padding: 7px 6px; cursor: pointer; white-space: nowrap; }
+.cx-tabs button[aria-pressed="true"] { background: var(--main); color: #fff; box-shadow: var(--lift); }
+.cx-tabs button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+.cx-cat { font-weight: 800; font-size: 0.8rem; color: var(--muted); margin: 14px 2px 6px; letter-spacing: 0.02em; }
+.cx-row { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; background: var(--slide); overflow: hidden; }
+.cx-row.locked { background: transparent; border-style: dashed; }
+.cx-head { width: 100%; display: flex; align-items: center; gap: 10px; font: inherit; color: var(--ink); background: none; border: 0; padding: 11px 12px; cursor: pointer; text-align: left; }
+.cx-head:focus-visible { outline: 2px solid var(--bruise); outline-offset: -2px; }
+.cx-name { font-weight: 700; flex: 1; }
+.cx-row.locked .cx-name { color: var(--muted); }
+.cx-tag { font-size: 0.75rem; color: var(--muted); }
+.cx-chev { color: var(--muted); transition: transform .15s; }
+.cx-row.open .cx-chev { transform: rotate(180deg); }
+.cx-body { display: flex; gap: 12px; align-items: flex-start; padding: 0 12px 12px; }
+.cx-body p { margin: 0; color: var(--muted); line-height: 1.45; font-size: 0.9rem; }
+.cx-pic { position: static; inset: auto; width: 80px; height: 80px; border-radius: 8px; border: 1px solid var(--line); flex-shrink: 0; }
+/* ---- edge to edge: backgrounds fill the whole screen, content stays clear of the notch and bars ---- */
+.hud { top: calc(14px + var(--sat)); left: calc(16px + var(--sal)); right: calc(16px + var(--sar)); }
+.legend { left: calc(16px + var(--sal)); bottom: calc(12px + var(--sab)); }
+.autobtn { right: calc(16px + var(--sar)); bottom: calc(8px + var(--sab)); }
+.panel { padding: var(--sat) var(--sar) var(--sab) 0; }
+.overlay { padding: calc(20px + var(--sat)) calc(20px + var(--sar)) calc(20px + var(--sab)) calc(20px + var(--sal)); }
+.toast { bottom: calc(44px + var(--sab)); }
+@media (max-width: 760px), (orientation: portrait) and (max-width: 1000px) {
+  .legend { bottom: 12px; }
+  .autobtn { bottom: 8px; }
+  .panel { padding: 0 var(--sar) var(--sab) var(--sal); }
+  .app.expanded .panel { padding-top: 0; }
+}
+.update-btn {
+  display: block; width: 100%; margin: -4px 0 14px; font: inherit; font-weight: 800; font-size: 0.95rem; color: #fff;
+  background: var(--heal); border: 0; border-radius: 8px; padding: 12px 14px; cursor: pointer; box-shadow: var(--lift);
+}
+.update-btn[hidden] { display: none; }
+.update-btn:hover { filter: brightness(1.08); }
+.update-btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 </style>
 </head>
 <body>
@@ -641,12 +705,8 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
     <div class="sheet-body">
       <div class="wordmark">Host<span>.</span></div>
       <p class="tagline">An idle game about being the worst thing that ever happened to a planet.</p>
-      <div class="intro-text">
-        <p>You are a virus. Get into one host, drain its lifeforce, and spread to the next. Spend what you drain on upgrades: more damage, longer jumps, stranger mutations.</p>
-        <p>Each world fights back with an immune system and a race to a cure. Lose all your viruses and the run ends, but the DNA you earned stays and makes every future run stronger.</p>
-        <p>Clear five zones, from a petri dish to the whole planet. A boss guards the end of each one. Kill Patient Omega and the world is yours.</p>
-        <p>You can play every choice yourself, or leave it running. Anything you don't decide gets decided for you, and it keeps playing while you're away.</p>
-      </div>
+      <p class="g-lead">You are a virus. Get into one host, drain its lifeforce, and spread to the next. Here's everything you'll see along the way.</p>
+      <div id="guide"></div>
     </div>
     <div class="sheet-foot"><span></span><button class="cta" id="introGo">Begin</button></div>
   </div>
@@ -657,6 +717,7 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
       <div class="wordmark">Host<span>.</span></div>
       <p class="tagline">From a petri dish to the whole planet.</p>
       <div class="status" id="menuStatus"></div>
+      <button class="update-btn" id="updateBtn" hidden></button>
     </div>
     <div class="menu-bar">
       <div class="side side-left">
@@ -694,6 +755,7 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
     <div class="set-group">
       <h3>Display</h3>
       <div class="set-row"><div><b>Theme</b><p>System follows your device's light or dark mode.</p></div><div class="seg" data-set="theme"></div></div>
+      <div class="set-row" id="verRow"><div><b>App version</b><p id="verText">Web version</p></div><button class="side-btn" id="checkUpdate">Check for updates</button></div>
       <div class="set-row" id="fsRow"><div><b>Full screen</b><p>Hide the browser's bars. Swipe or press Esc to leave.</p></div><button class="cta" id="fsBtn">Go full screen</button></div>
       <div class="set-row"><div><b>Main color</b><p>Tints the whole app: backgrounds, panels, cells, and borders.</p></div><div class="swatches" data-color="main"></div></div>
       <div class="set-row"><div><b>Accent color</b><p>Buttons, tabs, boons, and the virus itself.</p></div><div class="swatches" data-color="accent"></div></div>
@@ -712,6 +774,10 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
 <div class="screen sheet-screen" id="codex">
   <div class="sheet wide">
     <div class="sheet-head"><h2>Codex</h2><span class="codex-count" id="codexCount"></span></div>
+    <div class="cx-tools">
+      <input type="search" id="codexSearch" placeholder="Search what you've discovered" aria-label="Search the Codex">
+      <div class="cx-tabs" id="codexTabs" role="group" aria-label="Filter the Codex"></div>
+    </div>
     <div class="sheet-body" id="codexList"></div>
     <div class="sheet-foot"><span></span><button class="cta" id="codexBack">Back</button></div>
   </div>
@@ -1020,8 +1086,10 @@ function generateWorld() {
   // world 1 is the tutorial world: no map curses, no sturdy hosts, no special hosts
   const gentle = w === 1;
   const scatter = gentle ? 0 : M.scatter;
-  const sigma = 0.13 * Math.max(bw, bh) * (1 + 0.35 * scatter);
-  const floor = Math.min(0.6, 0.03 + 0.2 * scatter);
+  // early worlds are evenly spread with few stragglers; clusters and gaps grow over the first ten worlds
+  const ramp = Math.min(1, (w - 1) / 9);
+  const sigma = 0.13 * Math.max(bw, bh) * (1 + 0.35 * scatter) * (1 + 0.8 * (1 - ramp));
+  const floor = Math.min(0.75, 0.6 - 0.57 * ramp + 0.2 * scatter);
   let minD = 0.55 * Math.sqrt((bw * bh) / n);
   const pts = [];
   let tries = 0;
@@ -1036,6 +1104,24 @@ function generateWorld() {
     let ok = true;
     for (const p of pts) { if ((p[0] - x) ** 2 + (p[1] - y) ** 2 < minD * minD) { ok = false; break; } }
     if (ok) pts.push([x, y]);
+  }
+  // worlds 1 to 4: pull far-off stragglers in next to another host so nothing starts hopelessly isolated
+  if (w <= 4) {
+    const reach = 0.85 * Math.sqrt((bw * bh) / n), maxGap = reach * (0.75 + 0.12 * (w - 1));
+    for (let pass = 0; pass < 3; pass++) {
+      for (let i = 0; i < pts.length; i++) {
+        let nn = Infinity;
+        for (let j = 0; j < pts.length; j++) if (j !== i) nn = Math.min(nn, Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]));
+        if (nn <= maxGap) continue;
+        for (let tryN = 0; tryN < 40; tryN++) {
+          const q = pts[Math.floor(rng() * pts.length)]; if (q === pts[i]) continue;
+          const a = rng() * Math.PI * 2, d = reach * (0.5 + 0.25 * rng());
+          const x = q[0] + Math.cos(a) * d, y = q[1] + Math.sin(a) * d;
+          if (x < 0.02 || y < 0.02 || x > bw - 0.02 || y > bh - 0.02) continue;
+          if (pts.every((p, j) => j === i || Math.hypot(p[0] - x, p[1] - y) >= minD * 0.9)) { pts[i] = [x, y]; break; }
+        }
+      }
+    }
   }
   const hpBase = worldHp(w);
   R.hosts = pts.map(p => {
@@ -1085,6 +1171,7 @@ const HOST_INFO = {
   carrier:  ["Carrier", "A trait any size of host can have, shown by the dotted ring. Once infected, its jumps reach 60% farther, bridging gaps between clusters. It has 20% less health and pays a little less."],
   vacc:     ["Vaccinated", "Can't be infected at all, and doesn't count toward clearing the world. Your virus has to route around it."],
   healer:   ["Healer", "Every 4 seconds, removes a stack from each infected host in its range and heals them a little. Infecting the healer stops it."],
+  immune:   ["Fought off", "Teal ring and shield: this host's immune system beat your current virus, so it can't catch it again. Placing a new virus resets this."],
   sentinel: ["Sentinel", "Can't be infected until a neighbor within range dies. Kill something next to it first."]
 };
 function buildLegend() {
@@ -1092,6 +1179,7 @@ function buildLegend() {
   if (R.hosts.some(h => h.vacc)) items.push("vacc");
   if (R.hosts.some(h => h.healer)) items.push("healer");
   if (R.hosts.some(h => h.sentinel && h.boss === undefined)) items.push("sentinel");
+  items.push("immune");
   const boss = R.hosts.find(h => h.boss !== undefined);
   if (boss) { HOST_INFO.boss = [ZONES[boss.boss].boss, "Boss. " + ZONES[boss.boss].bossText + " It must die to clear the world."]; items.push("boss"); }
   const el = $("legend"); el.innerHTML = "";
@@ -1152,7 +1240,9 @@ function bounceChance(l) { return Math.min(0.75, 0.15 + 0.07 * l); }
 const required = () => R.hosts.filter(h => !h.vacc);
 const killedCount = () => R.hosts.reduce((n, h) => n + (h.dead ? 1 : 0), 0);
 const alertLevel = () => Math.min(1, M.alert * killedCount() / Math.max(1, required().length));
-function cleanseBase() { return 0.05 * Math.pow(1.25, R.world - 1) * Math.pow(0.88, R.lv.stealth) * (1 + 3 * alertLevel()); }
+// how hard the immune alert pushes back as you kill: gentle in world 1, full strength by world 10
+const alertPush = () => 1 + 2 * Math.min(1, (R.world - 1) / 9);
+function cleanseBase() { return 0.05 * Math.pow(1.25, R.world - 1) * Math.pow(0.88, R.lv.stealth) * (1 + alertPush() * alertLevel()); }
 const adaptTime = () => 12 * (1 + 0.15 * R.lv.shapeshift) * M.adapt / Math.pow(1.08, R.world - 1);
 const regenRate = () => 0.008 * Math.pow(1.1, R.world - 1) * Math.pow(0.85, R.lv.suppress) * M.regen;
 function rampMult(t) { const l = R.lv.wither; return l ? 1 + Math.min(0.04 * l * t, l) : 1; }
@@ -1245,7 +1335,7 @@ function step(dt) {
       h.docT += dt;
       if (h.docT >= 8) {
         h.docT = 0;
-        for (const o of nearby(h, rangePx() * 2.2, o => o.inf && !o.dead)) { o.inf = false; o.resist = 1e9; link(h, o); float(o, "cured", true); }
+        for (const o of nearby(h, rangePx() * 2.2, o => o.inf && !o.dead)) { o.inf = false; o.resist = 1e9; o.flash = now; vs().doctor++; link(h, o); float(o, "cured", "immune"); }
       }
     }
     if (h.healer && !h.inf) {
@@ -1254,7 +1344,8 @@ function step(dt) {
         h.hAcc = 0;
         for (const o of nearby(h, rangePx() * (h.healRange || 1), o => o.inf && !o.dead)) {
           o.stacks--; o.hp = Math.min(o.max, o.hp + o.max * 0.05);
-          if (o.stacks <= 0) { o.inf = false; o.resist = 1e9; }
+          o.flash = now;
+          if (o.stacks <= 0) { o.inf = false; o.resist = 1e9; vs().healed++; float(o, "healed", "immune"); }
           link(h, o);
         }
       }
@@ -1267,7 +1358,8 @@ function step(dt) {
     h.hp = Math.min(h.max, h.hp + rg * (h.boss === 0 ? 3 : 1) * h.max * dt);
     if (h.t > 4 && Math.random() < cb * (1 + h.t / (h.boss === 4 ? ad / 2 : ad)) * dt) {
       h.stacks--;
-      if (h.stacks <= 0) { h.inf = false; h.resist = 1e9; h.t = 0; }
+      h.flash = now;
+      if (h.stacks <= 0) { h.inf = false; h.resist = 1e9; h.t = 0; vs().fought++; float(h, "fought off", "immune"); }
     }
     if (h.inf && h.stacks >= SHED_STACKS && h.bAcc >= bcd) { h.bAcc = 0; spreadFrom(h); }
   }
@@ -1285,7 +1377,8 @@ function step(dt) {
   // the world races to a cure; when it lands, this virus is wiped out
   R.cure += dt / cureTime();
   if (R.cure >= 1) {
-    for (const h of R.hosts) if (h.inf) { h.inf = false; h.resist = 1e9; float(h, "cured", true); }
+    for (const h of R.hosts) if (h.inf) { h.inf = false; h.resist = 1e9; h.flash = now; float(h, "cured", "immune"); }
+    vs().cured = true;
     if (!silent) toast("The cure landed.");
   }
   checkMutations();
@@ -1294,12 +1387,14 @@ function step(dt) {
 }
 
 // ================= flow =================
+// what happened to the current virus, so we can say why it died out
+const vs = () => R.vs || (R.vs = { fought: 0, healed: 0, doctor: 0, cured: false });
 function place(h) {
   if (R.phase !== "pick" || !h || h.dead || h.vacc || h.sentinel) return false;
   for (const o of R.hosts) o.resist = 0; // a fresh strain: old immunity doesn't apply
   R.lastPz = R.hosts.indexOf(h);
   infect(h, 1 + G.p.incubate);
-  R.cure = 0;
+  R.cure = 0; R.vs = { fought: 0, healed: 0, doctor: 0, cured: false };
   R.phase = "run";
   if (!silent && !R.tipShown && (G.tips || 0) < 3) {
     R.tipShown = true; G.tips = (G.tips || 0) + 1;
@@ -1308,12 +1403,21 @@ function place(h) {
   float(h, "virus " + (maxLives() - R.lives + 1), true);
   return true;
 }
+function lostReason() {
+  const v = vs(), parts = [];
+  if (v.cured) parts.push("The cure landed and wiped it out.");
+  if (v.fought) parts.push(v.fought + " host" + (v.fought > 1 ? "s" : "") + " fought it off.");
+  if (v.healed) parts.push("Healers cleared " + v.healed + ".");
+  if (v.doctor) parts.push("The Doctor cured " + v.doctor + ".");
+  if (!parts.length) parts.push("It ran out of hosts it could reach.");
+  return "Your virus died out. " + parts.join(" ");
+}
 function virusLost() {
   R.lives--;
   if (R.lives <= 0) { runOver(); return; }
   R.phase = "pick"; R.autoT = 0;
   if (!R.hosts.some(canPlace)) R.hosts.forEach(h => { if (!h.dead) h.sentinel = false; });
-  if (!silent) toast("Your virus died out. " + R.lives + " left for this world.");
+  if (!silent) toast(lostReason() + " " + R.lives + " virus" + (R.lives === 1 ? "" : "es") + " left for this world.", 6000);
 }
 function worldCleared() {
   const d = 3 * Math.pow(DNA_GROWTH, R.world - 1) * dnaMult();
@@ -1810,7 +1914,10 @@ function updateHud() {
   if (R.phase === "idle") next = "No run active";
   else if (R.phase === "start" || R.phase === "cards") next = "Choosing cards";
   else if (R.phase === "pick") { next = G.settings.autoChoose ? "Auto-placing in " + countdown() + "s" : "Place your next virus"; act = true; }
-  else if (R.phase === "run") next = "Cure lands in " + Math.max(0, Math.ceil((1 - R.cure) * cureTime())) + "s";
+  else if (R.phase === "run") {
+    const f = R.hosts.filter(h => h.resist > 0 && !h.inf && !h.dead).length;
+    next = "Cure lands in " + Math.max(0, Math.ceil((1 - R.cure) * cureTime())) + "s" + (f ? ", " + f + " fought off" : "");
+  }
   else if (R.phase === "over") next = "Run over";
   $("hudNext").textContent = next;
   $("hudNext").classList.toggle("act", act);
@@ -1914,9 +2021,11 @@ function draw() {
       ctx.beginPath(); ctx.arc(x, y, Math.max(1.5, r * 0.18), 0, Math.PI * 2);
       ctx.fillStyle = C.stain; ctx.globalAlpha = h.inf ? 0.9 : 0.5; ctx.fill(); ctx.globalAlpha = 1;
     }
-    if (h.resist > 0 && !h.inf) {
-      ctx.beginPath(); ctx.arc(x, y, r + 2.5, 0, Math.PI * 2);
-      ctx.setLineDash([3, 3]); ctx.strokeStyle = C.muted; ctx.lineWidth = 1.2; ctx.stroke(); ctx.setLineDash([]);
+    if (h.resist > 0 && !h.inf && R.phase === "run") drawImmune(ctx, x, y, r);
+    if (h.flash !== undefined && now - h.flash < 0.5 && !reduceMotion) {
+      const k = (now - h.flash) / 0.5;
+      ctx.beginPath(); ctx.arc(x, y, r + 3 + 8 * k, 0, Math.PI * 2);
+      ctx.strokeStyle = C.heal; ctx.globalAlpha = 1 - k; ctx.lineWidth = 2; ctx.stroke(); ctx.globalAlpha = 1;
     }
     if (h.hp < h.max) {
       ctx.beginPath(); ctx.arc(x, y, r + (h.carrier ? 8 : 4), -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (h.hp / h.max));
@@ -1934,12 +2043,21 @@ function draw() {
   ctx.textAlign = "center"; ctx.font = "600 13px 'Bricolage Grotesque', system-ui, sans-serif";
   for (const f of floats) {
     ctx.globalAlpha = Math.max(0, 1 - f.t / 1.4);
-    ctx.fillStyle = f.soft ? C.muted : C.life;
+    ctx.fillStyle = f.soft === "immune" ? C.heal : f.soft ? C.muted : C.life;
     ctx.fillText(f.text, f.x, f.y - 14 - f.t * 26);
   }
   ctx.globalAlpha = 1;
 }
 
+// fought-off marker: teal ring plus a small shield badge
+function drawImmune(c, x, y, r) {
+  c.beginPath(); c.arc(x, y, r + 2.5, 0, Math.PI * 2);
+  c.strokeStyle = C.heal; c.lineWidth = 2; c.stroke();
+  const bx = x + r * 0.75, by = y - r * 0.75, br = Math.max(4, r * 0.32);
+  c.beginPath(); c.moveTo(bx, by - br); c.lineTo(bx + br * 0.9, by - br * 0.55); c.lineTo(bx + br * 0.75, by + br * 0.5);
+  c.lineTo(bx, by + br); c.lineTo(bx - br * 0.75, by + br * 0.5); c.lineTo(bx - br * 0.9, by - br * 0.55); c.closePath();
+  c.fillStyle = C.heal; c.fill();
+}
 // ================= loop =================
 let last = performance.now(), hudAcc = 0, saveAcc = 0, errShown = false;
 function frame(ts) {
@@ -2067,6 +2185,327 @@ stage.addEventListener("pointerdown", e => {
   if (!isExpanded()) return;
   e.stopPropagation(); e.preventDefault(); setExpanded(false);
 }, true);
+// ================= mini host renderer (guide + codex) =================
+// Draws a host the same way the arena does, from a small description object.
+function drawMini(c, x, y, r, o) {
+  o = o || {};
+  if (o.dead) {
+    c.beginPath(); c.arc(x, y, r * 0.78, 0, Math.PI * 2);
+    c.fillStyle = C.husk; c.globalAlpha = 0.55; c.fill(); c.globalAlpha = 1;
+    return;
+  }
+  if (o.reach) {
+    c.beginPath(); c.arc(x, y, o.reach, 0, Math.PI * 2);
+    c.setLineDash([4, 6]); c.strokeStyle = o.healer ? C.heal : C.stain; c.globalAlpha = 0.55; c.lineWidth = 1.2; c.stroke();
+    c.setLineDash([]); c.globalAlpha = 1;
+  }
+  if (o.boss) {
+    c.beginPath(); c.arc(x, y, r + 7, 0, Math.PI * 2); c.strokeStyle = C.bruise; c.lineWidth = 2; c.stroke();
+  }
+  c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2);
+  c.fillStyle = o.vacc ? C.slide : C.cell; c.fill();
+  c.lineWidth = o.boss ? 4 : o.type === "sturdy" ? 3.2 : o.type === "frail" ? 1 : 1.6; c.strokeStyle = C.membrane;
+  if (o.vacc) c.setLineDash([3, 3]);
+  c.stroke(); c.setLineDash([]);
+  if (o.vacc) {
+    c.beginPath(); c.moveTo(x - r * 0.45, y + r * 0.45); c.lineTo(x + r * 0.45, y - r * 0.45);
+    c.strokeStyle = C.muted; c.lineWidth = 1.5; c.stroke();
+    return;
+  }
+  if (o.carrier) {
+    c.beginPath(); c.arc(x, y, r + 4, 0, Math.PI * 2);
+    c.setLineDash([1.5, 3.5]); c.strokeStyle = C.stain; c.lineWidth = 1.5; c.stroke(); c.setLineDash([]);
+  }
+  if (o.sentinel) { const s = r + 3; c.beginPath(); c.rect(x - s, y - s, s * 2, s * 2); c.strokeStyle = C.ink; c.lineWidth = 2; c.stroke(); }
+  if (o.stacks > 0) {
+    const k = Math.min(1, o.stacks);
+    c.beginPath(); c.arc(x, y, r * (0.3 + 0.62 * k), 0, Math.PI * 2);
+    c.fillStyle = C.bruise; c.globalAlpha = 0.35 + 0.55 * k; c.fill(); c.globalAlpha = 1;
+    if (o.shed) { c.beginPath(); c.arc(x, y, r * 0.95, 0, Math.PI * 2); c.strokeStyle = C.bruise; c.lineWidth = 1.2; c.stroke(); }
+  }
+  if (o.healer) {
+    const s = Math.max(3, r * 0.4); c.fillStyle = C.heal;
+    c.fillRect(x - s, y - s * 0.28, s * 2, s * 0.56); c.fillRect(x - s * 0.28, y - s, s * 0.56, s * 2);
+  } else {
+    c.beginPath(); c.arc(x, y, Math.max(1.5, r * 0.18), 0, Math.PI * 2);
+    c.fillStyle = C.stain; c.globalAlpha = o.stacks > 0 ? 0.9 : 0.5; c.fill(); c.globalAlpha = 1;
+  }
+  if (o.immune) drawImmune(c, x, y, r);
+  if (o.flash !== undefined && o.flash < 1) {
+    c.beginPath(); c.arc(x, y, r + 3 + 8 * o.flash, 0, Math.PI * 2);
+    c.strokeStyle = C.heal; c.globalAlpha = 1 - o.flash; c.lineWidth = 2; c.stroke(); c.globalAlpha = 1;
+  }
+  if (o.hp !== undefined && o.hp < 1) {
+    c.beginPath(); c.arc(x, y, r + (o.carrier ? 8 : 4), -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0, o.hp));
+    c.strokeStyle = C.life; c.lineWidth = 2.5; c.lineCap = "round"; c.stroke(); c.lineCap = "butt";
+  }
+}
+function miniLabel(c, text, x, y, color, weight) {
+  c.fillStyle = color || C.muted; c.textAlign = "center";
+  c.font = (weight || 600) + " 11px 'Bricolage Grotesque', system-ui, sans-serif"; c.fillText(text, x, y);
+}
+function miniFloat(c, text, x, y, k, color) {
+  c.globalAlpha = Math.max(0, 1 - k); miniLabel(c, text, x, y - 10 - k * 18, color, 700); c.globalAlpha = 1;
+}
+function tendril(c, ax, ay, bx, by, grow, color, alpha) {
+  const mx = (ax + bx) / 2 + (by - ay) * 0.15, my = (ay + by) / 2 - (bx - ax) * 0.15;
+  c.beginPath(); c.moveTo(ax, ay);
+  for (let i = 1; i <= 16 * Math.max(0, Math.min(1, grow)); i++) { const t = i / 16, u = 1 - t; c.lineTo(u * u * ax + 2 * u * t * mx + t * t * bx, u * u * ay + 2 * u * t * my + t * t * by); }
+  c.strokeStyle = color || C.bruise; c.globalAlpha = alpha === undefined ? 0.9 : alpha; c.lineWidth = 2; c.stroke(); c.globalAlpha = 1;
+}
+const clamp01 = v => Math.max(0, Math.min(1, v));
+const seg = (t, a, b) => clamp01((t - a) / (b - a)); // 0..1 progress of t between a and b
+
+// ================= guide scenes =================
+// Each scene draws one looping moment of the game at time t (seconds).
+const SCENES = {
+  ladder(c, w, h, t) {
+    const n = 25, gap = Math.min(16, (w - 40) / n), x0 = w / 2 - gap * (n - 1) / 2, cur = 1 + Math.floor((t % 10) / 10 * n);
+    for (let i = 1; i <= n; i++) {
+      const x = x0 + (i - 1) * gap, y = h / 2 - 8, boss = i % 5 === 0, s = boss ? 6 : 4;
+      c.save(); c.translate(x, y); if (boss) c.rotate(Math.PI / 4);
+      c.fillStyle = i < cur ? C.bruise : C.line;
+      if (boss) c.fillRect(-s, -s, s * 2, s * 2); else { c.beginPath(); c.arc(0, 0, s, 0, Math.PI * 2); c.fill(); }
+      if (i === cur) { c.strokeStyle = C.bruise; c.lineWidth = 2; if (boss) c.strokeRect(-s - 2, -s - 2, s * 2 + 4, s * 2 + 4); else { c.beginPath(); c.arc(0, 0, s + 2.5, 0, Math.PI * 2); c.stroke(); } }
+      c.restore();
+    }
+    ZONES.forEach((z, i) => miniLabel(c, z.name, x0 + (i * 5 + 2) * gap, h / 2 + 22, C.muted, 600));
+  },
+  hosts(c, w, h, t) {
+    const kinds = [["frail", "Frail", 0.74], ["common", "Common", 1], ["sturdy", "Sturdy", 1.28], ["carrier", "Carrier", 0.95]];
+    const step = w / kinds.length, r = Math.min(22, step * 0.22);
+    kinds.forEach(([k, name, s], i) => {
+      const x = step * (i + 0.5), y = h / 2 - 8;
+      drawMini(c, x, y, r * s, { type: k === "carrier" ? "common" : k, carrier: k === "carrier" });
+      miniLabel(c, name, x, h - 14, C.ink, 700);
+    });
+  },
+  infect(c, w, h, t) {
+    const P = 9, tt = t % P, x = w / 2, y = h / 2 - 4, r = 26;
+    const stacks = Math.min(5, 1 + Math.floor(tt / 1.1)), hp = 1 - seg(tt, 0.5, 7.2);
+    if (tt > 7.2) {
+      drawMini(c, x, y, r, { dead: true });
+      miniFloat(c, "+12 lifeforce", x, y - 18, seg(tt, 7.2, 8.6), C.life);
+      miniLabel(c, "dead: no more lifeforce", x, h - 8);
+      return;
+    }
+    drawMini(c, x, y, r, { stacks: stacks / 5, hp, shed: stacks >= 3 });
+    const tick = (tt * 2) % 1; miniFloat(c, "+" + stacks, x + 26, y - 6, tick, C.life);
+    miniLabel(c, stacks + " stack" + (stacks > 1 ? "s" : "") + ", health " + Math.round(hp * 100) + "%", x, h - 8);
+  },
+  bounce(c, w, h, t) {
+    const P = 7, tt = t % P, ax = w * 0.3, bx = w * 0.7, y = h / 2 - 2, r = 20, reach = (bx - ax) * 1.12;
+    const stacks = Math.min(5, 1 + Math.floor(tt / 0.9)), shed = stacks >= 3, jump = seg(tt, 2.8, 3.4);
+    drawMini(c, ax, y, r, { stacks: stacks / 5, shed, reach: shed ? reach : 0, hp: 1 - tt / 14 });
+    if (tt > 2.8) tendril(c, ax, y, bx, y, jump, C.bruise, tt < 4.5 ? 0.9 : Math.max(0, 0.9 - (tt - 4.5)));
+    drawMini(c, bx, y, r, { stacks: tt > 3.4 ? Math.min(1, (1 + Math.floor((tt - 3.4) / 0.9)) / 5) : 0 });
+    miniLabel(c, shed ? "3+ stacks: it can jump" : "building stacks", ax, h - 8, shed ? C.bruise : C.muted, 700);
+    miniLabel(c, tt > 3.4 ? "caught it" : "healthy", bx, h - 8);
+  },
+  carrier(c, w, h, t) {
+    const y = h / 2 - 4, r = 18, base = Math.min(w * 0.17, 70), pulse = reduceMotion ? 0 : 3 * Math.sin(t * 2);
+    drawMini(c, w * 0.27, y, r, { stacks: 0.6, shed: true, reach: base + pulse });
+    drawMini(c, w * 0.73, y, r, { stacks: 0.6, shed: true, carrier: true, reach: base * 1.6 + pulse });
+    miniLabel(c, "normal reach", w * 0.27, h - 6, C.ink, 700);
+    miniLabel(c, "carrier: 60% farther", w * 0.73, h - 6, C.ink, 700);
+  },
+  death(c, w, h, t) {
+    const P = 6, tt = t % P, cx = w / 2, y = h / 2 - 4, r = 20, lx = w * 0.2, rx = w * 0.8;
+    const dead = tt > 2;
+    drawMini(c, cx, y, r, dead ? { dead: true } : { stacks: 1, hp: 1 - seg(tt, 0, 2), shed: true });
+    for (const [x, d] of [[lx, 0], [rx, 0.15]]) {
+      if (dead) tendril(c, cx, y, x, y, seg(tt, 2 + d, 2.6 + d), C.bruise, tt < 4 ? 0.9 : Math.max(0, 0.9 - (tt - 4)));
+      drawMini(c, x, y, r * 0.9, { stacks: tt > 2.6 + d ? 0.2 : 0 });
+    }
+    if (dead) miniFloat(c, "+lifeforce", cx, y - 16, seg(tt, 2, 3.4), C.life);
+    miniLabel(c, dead ? "it dies and infects 2 neighbors" : "about to die", cx, h - 6, C.ink, 700);
+  },
+  immune(c, w, h, t) {
+    const P = 8, tt = t % P, x = w / 2, y = h / 2 - 4, r = 24;
+    const drops = [2, 3.5, 4.6, 5.4], removed = drops.filter(d => tt > d).length, stacks = Math.max(0, 4 - removed);
+    const lastDrop = drops.filter(d => tt > d).pop(), flash = lastDrop !== undefined ? seg(tt, lastDrop, lastDrop + 0.5) : 1;
+    if (stacks === 0) {
+      drawMini(c, x, y, r, { immune: true, hp: 0.7, flash: reduceMotion ? 1 : flash });
+      miniFloat(c, "fought off", x, y - 22, seg(tt, 5.4, 6.8), C.heal);
+      miniLabel(c, "immune to this virus now", x, h - 6, C.heal, 700);
+    } else {
+      drawMini(c, x, y, r, { stacks: stacks / 5, hp: 0.7, flash: reduceMotion ? 1 : flash, shed: stacks >= 3 });
+      miniLabel(c, stacks + " stack" + (stacks > 1 ? "s" : "") + (removed ? ", immune system removed " + removed : ""), x, h - 6, removed ? C.heal : C.muted, 700);
+    }
+  },
+  cure(c, w, h, t) {
+    const P = 10, tt = t % P, k = tt / P, bw = Math.min(260, w - 60), x0 = w / 2 - bw / 2, y = h / 2 - 14;
+    c.fillStyle = C.line; c.fillRect(x0, y, bw, 10);
+    c.fillStyle = C.life; c.fillRect(x0, y, bw * k, 10);
+    miniLabel(c, "Cure lands in " + Math.ceil((1 - k) * 120) + "s", w / 2, y - 8, C.ink, 700);
+    const lives = 3 - (tt > P - 0.6 ? 1 : 0);
+    for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(w / 2 - 18 + i * 18, y + 34, 6, 0, Math.PI * 2); c.fillStyle = i < lives ? C.bruise : C.line; c.fill(); }
+    miniLabel(c, "viruses left this world", w / 2, y + 58);
+  },
+  special(c, w, h, t) {
+    const kinds = [["healer", "Healer", { healer: true }], ["vacc", "Vaccinated", { vacc: true }], ["sentinel", "Sentinel", { sentinel: true }], ["boss", "Boss", { boss: true }]];
+    const step = w / kinds.length;
+    kinds.forEach(([k, name, o], i) => {
+      const x = step * (i + 0.5), y = h / 2 - 8, r = k === "boss" ? 26 : 18;
+      drawMini(c, x, y, r, o);
+      miniLabel(c, name, x, h - 10, C.ink, 700);
+    });
+  }
+};
+
+const GUIDE = [
+  { scene: "ladder", title: "The goal",
+    text: "Spread through 25 worlds in five zones, from a petri dish to the whole planet. The path at the top of the arena shows where you are. Every fifth world (the bigger diamonds) is a boss. Kill Patient Omega on world 25 and you win." },
+  { scene: "hosts", title: "Hosts",
+    text: "Every circle is a host. <b>Frail</b> hosts die fast but pay little. <b>Common</b> hosts are average. <b>Sturdy</b> hosts (thick outline) take much longer to kill but pay more. A dotted ring means a <b>carrier</b>, which any size can be." },
+  { scene: "infect", title: "Infecting a host",
+    text: "Tap a host to place your virus. The colored stain inside grows as the virus builds <b>stacks</b>, and every stack deals damage over time. The ring around the host is its <b>health</b>, and every point of damage becomes <b>lifeforce</b>, which you spend on upgrades. When the health runs out, the host dies." },
+  { scene: "bounce", title: "Spreading by jumping",
+    text: "Once a host has <b>3 stacks</b> (a thin ring appears inside it), it keeps trying to jump to the nearest healthy host within its <b>reach</b>, the dashed circle. Bounce makes jumps more likely and more frequent. Reach makes them travel farther. Hover any host to see its reach." },
+  { scene: "carrier", title: "Carriers",
+    text: "A carrier's jumps reach 60% farther than normal, so it can bridge the gap to another cluster. Carriers have a little less health and pay a little less. Starting near one can open up the whole map." },
+  { scene: "death", title: "Death spread",
+    text: "Every time a host dies, the virus spreads to its 2 nearest healthy neighbors for free. Contagion adds more. This means a damage-heavy virus can spread without ever jumping." },
+  { scene: "immune", title: "The immune system",
+    text: "Infected hosts fight back by <b>removing stacks</b> (a teal flash), faster the longer they're infected and the more hosts you've killed. If a host removes every stack, it <b>fought it off</b>: a teal ring and shield mark it, and it can't catch that virus again. Stealth, Shapeshift and Suppress weaken the immune system." },
+  { scene: "cure", title: "The cure and your viruses",
+    text: "Each world races to a cure. When the timer runs out, your current virus is wiped out. You get 3 viruses per world, and dead hosts stay dead between them, so each new virus picks up where the last one stopped. Lose them all and the run ends. When a virus dies, a message tells you why." },
+  { scene: "special", title: "Special hosts",
+    text: "Curses add special hosts from world 2 on. <b>Healers</b> remove stacks from infected neighbors. <b>Vaccinated</b> hosts can't be infected and don't need to die. <b>Sentinels</b> can't be infected until a neighbor dies. <b>Bosses</b> sit in the middle of every fifth world and must die to clear it." },
+  { html: '<div class="g-cards"><div class="pcard boon"><b>Boon</b><span>Helps you for the rest of the run</span></div><div class="pcard curse"><b>Curse</b><span>Makes the run harder</span></div></div>', title: "Cards",
+    text: "Before a run and after every world you clear, you pick one boon and one curse. Both last the whole run. Values a card changes show in the accent color in your upgrades; hover them to see which card did it." },
+  { title: "Lifeforce, DNA and Evolve",
+    text: "<b>Lifeforce</b> buys upgrades for this run only. <b>DNA</b> is permanent: you collect it from kills, cleared worlds and bosses, and it's paid out when the run ends. Spend it in <b>Evolve</b> on lasting upgrades and automation." },
+  { html: '<div class="g-auto"><span class="g-autobtn">▶ Auto on</span></div>', title: "Leaving it running",
+    text: "With Auto on, anything you don't decide in time (placing a virus, picking cards, starting the next run) is decided for you, and the game keeps playing while you're away. Turn it off with the button in the arena's corner, or in Settings." }
+];
+
+let guideBuilt = false, guideOn = false;
+function buildGuide() {
+  if (guideBuilt) return; guideBuilt = true;
+  const el = $("guide"); el.innerHTML = "";
+  for (const g of GUIDE) {
+    const sec = document.createElement("section"); sec.className = "g-sec";
+    let vis = "";
+    if (g.scene) vis = '<canvas class="g-canvas" data-scene="' + g.scene + '" aria-hidden="true"></canvas>';
+    else if (g.html) vis = g.html;
+    sec.innerHTML = "<h3>" + g.title + "</h3>" + (vis ? '<div class="g-vis">' + vis + "</div>" : "") + "<p>" + g.text + "</p>";
+    el.appendChild(sec);
+  }
+}
+function startGuide() {
+  buildGuide();
+  if (guideOn) return; guideOn = true;
+  const t0 = performance.now();
+  function frame(ts) {
+    if (!$("intro").classList.contains("show")) { guideOn = false; return; }
+    const t = reduceMotion ? 4.2 : (ts - t0) / 1000;
+    for (const cv2 of document.querySelectorAll("#guide .g-canvas")) {
+      const rect = cv2.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) continue; // only animate what's on screen
+      const dpr = Math.min(window.devicePixelRatio || 1, 2), w = cv2.clientWidth, h = cv2.clientHeight;
+      if (cv2.width !== Math.round(w * dpr) || cv2.height !== Math.round(h * dpr)) { cv2.width = Math.round(w * dpr); cv2.height = Math.round(h * dpr); }
+      const c = cv2.getContext("2d"); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.fillStyle = C.slide; c.fillRect(0, 0, w, h);
+      SCENES[cv2.dataset.scene](c, w, h, t);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// ================= codex: filterable list with expanding entries =================
+let codexFilter = "all", codexQuery = "", codexOpen = null;
+function codexEntries() {
+  const out = [];
+  const add = (cat, key, seen, name, text, draw) => out.push({ cat, id: cat + ":" + key, seen, name, text, draw });
+  const hostDraw = { frail: { type: "frail" }, common: { type: "common" }, sturdy: { type: "sturdy" }, carrier: { type: "common", carrier: true },
+    vacc: { vacc: true }, healer: { healer: true }, sentinel: { sentinel: true } };
+  for (const k of Object.keys(HOST_INFO).filter(k => k !== "boss" && k !== "immune"))
+    add("Hosts", k, !!G.seen.hosts[k], HOST_INFO[k][0], HOST_INFO[k][1], hostDraw[k]);
+  ZONES.forEach((z, i) => add("Bosses", i, !!G.seen.bosses[i], z.boss,
+    "World " + (i + 1) * ZONE_SIZE + ", end of " + z.name + ". " + z.bossText + (G.bosses[i] ? " Defeated. " + z.reward + "." : " Reward: " + z.reward + "."),
+    { boss: true, healer: i === 1, sentinel: i === 2 }));
+  for (const k in BOONS) add("Boons", k, !!G.seen.boons[k], BOONS[k].name, BOONS[k].text);
+  for (const k in CURSES) add("Curses", k, !!G.seen.curses[k], CURSES[k].name, CURSES[k].text);
+  for (const k in MUT) add("Mutations", k, !!G.seen.muts[k], MUT[k].name, MUT[k].text + ". Unlocks with " + Object.entries(MUT[k].needs).map(([u, n]) => UP[u].name + " " + n).join(" and ") + ", or from the Mutagen boon.");
+  return out;
+}
+function renderCodex() {
+  const all = codexEntries();
+  const cats = ["all", "Hosts", "Bosses", "Boons", "Curses", "Mutations"];
+  $("codexCount").textContent = all.filter(e => e.seen).length + " / " + all.length + " discovered";
+  const tabs = $("codexTabs"); tabs.innerHTML = "";
+  for (const cat of cats) {
+    const list = cat === "all" ? all : all.filter(e => e.cat === cat);
+    const b = document.createElement("button"); b.type = "button";
+    b.setAttribute("aria-pressed", codexFilter === cat);
+    b.textContent = (cat === "all" ? "All" : cat) + " " + list.filter(e => e.seen).length + "/" + list.length;
+    b.addEventListener("click", () => { codexFilter = cat; renderCodex(); });
+    tabs.appendChild(b);
+  }
+  const q = codexQuery.trim().toLowerCase();
+  const shown = all.filter(e => (codexFilter === "all" || e.cat === codexFilter) && (!q || (e.seen && (e.name + " " + e.text).toLowerCase().includes(q))));
+  const list = $("codexList"); list.innerHTML = "";
+  if (!shown.length) { list.innerHTML = '<p class="section-note">Nothing matches that search yet.</p>'; return; }
+  let lastCat = null;
+  for (const e of shown) {
+    if (codexFilter === "all" && e.cat !== lastCat) { const hd = document.createElement("div"); hd.className = "cx-cat"; hd.textContent = e.cat; list.appendChild(hd); lastCat = e.cat; }
+    const row = document.createElement("div"); row.className = "cx-row" + (e.seen ? "" : " locked") + (codexOpen === e.id ? " open" : "");
+    const head = document.createElement("button"); head.type = "button"; head.className = "cx-head";
+    head.setAttribute("aria-expanded", codexOpen === e.id);
+    head.innerHTML = '<span class="cx-name">' + (e.seen ? e.name : "???") + '</span><span class="cx-tag">' + ({ Hosts: "Host", Bosses: "Boss", Boons: "Boon", Curses: "Curse", Mutations: "Mutation" })[e.cat] + '</span><span class="cx-chev" aria-hidden="true">▾</span>';
+    head.addEventListener("click", () => { codexOpen = codexOpen === e.id ? null : e.id; renderCodex(); });
+    row.appendChild(head);
+    if (codexOpen === e.id) {
+      const body = document.createElement("div"); body.className = "cx-body";
+      if (e.seen && e.draw) {
+        const cvx = document.createElement("canvas"); cvx.className = "cx-pic"; cvx.width = 160; cvx.height = 160; body.appendChild(cvx);
+        const c = cvx.getContext("2d"); c.scale(2, 2); c.fillStyle = C.slide; c.fillRect(0, 0, 80, 80);
+        drawMini(c, 40, 40, e.draw.boss ? 22 : 18 * (e.draw.type === "sturdy" ? 1.28 : e.draw.type === "frail" ? 0.74 : 1), e.draw);
+      }
+      const p = document.createElement("p"); p.innerHTML = e.seen ? e.text : "Not discovered yet. Keep playing to find it.";
+      body.appendChild(p); row.appendChild(body);
+    }
+    list.appendChild(row);
+  }
+}
+
+// ================= app updates =================
+// The GitHub build stamps these two placeholders. In the browser they stay as-is and update checks are skipped.
+const APP_BUILD = "__HOST_BUILD__", UPDATE_REPO = "__HOST_REPO__";
+const buildNum = /^\d+$/.test(APP_BUILD) ? +APP_BUILD : 0;
+let updateInfo = null, updateToastShown = false;
+async function checkForUpdate(manual) {
+  if (!buildNum || UPDATE_REPO.indexOf("__") === 0) { if (manual) toast("Update checks only run in the Android app."); return; }
+  try {
+    const res = await fetch("https://api.github.com/repos/" + UPDATE_REPO + "/releases/latest", { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" });
+    if (!res.ok) throw new Error(res.status === 404 ? "private" : "http " + res.status);
+    const rel = await res.json();
+    const n = parseInt(String(rel.tag_name || "").replace(/\D/g, ""), 10) || 0;
+    const apk = (rel.assets || []).find(a => /\.apk$/i.test(a.name));
+    if (n > buildNum) {
+      updateInfo = { n, url: apk ? apk.browser_download_url : rel.html_url };
+      showUpdate();
+      if (!updateToastShown && !menuOpen) { updateToastShown = true; toast("Update available: build " + n + ". Get it from the main menu.", 6000); }
+    } else if (manual) toast("You're on the newest build (" + buildNum + ").");
+  } catch (e) {
+    if (manual) toast(String(e.message) === "private" ? "Couldn't see the releases. The GitHub repo needs to be public for update checks." : "Couldn't reach GitHub. Check your connection.", 6000);
+  }
+}
+function showUpdate() {
+  const b = $("updateBtn");
+  if (!updateInfo) { b.hidden = true; return; }
+  b.hidden = false; b.textContent = "Update available: build " + updateInfo.n + ". Tap to download";
+}
+// opens the download in the phone's browser; Android then offers to install it over this version
+function openUpdate() { if (updateInfo) window.location.href = updateInfo.url; }
+$("updateBtn").addEventListener("click", openUpdate);
+$("checkUpdate").addEventListener("click", () => checkForUpdate(true));
+$("verText").textContent = buildNum ? "Build " + buildNum + ". New builds are checked automatically." : "Web version. Updates are checked in the Android app.";
+setTimeout(() => checkForUpdate(false), 3000);
+setInterval(() => checkForUpdate(false), 6 * 3600 * 1000);
+
 // ================= menus =================
 let menuOpen = false, shopFromMenu = false, shopFromRun = false, awayNote = "";
 const runActive = () => R.phase !== "idle" && R.phase !== "over";
@@ -2168,29 +2607,12 @@ $("toMenu").addEventListener("click", () => { closeSub("settings"); showMenu(); 
 document.addEventListener("keydown", e => { if (e.key === "Escape") { if ($("strainOv").classList.contains("show")) $("strainOv").classList.remove("show"); else if ($("settings").classList.contains("show")) closeSub("settings"); else if ($("codex").classList.contains("show")) closeSub("codex"); else if (menuOpen && runActive()) hideMenu(); else showMenu(); } });
 $("mEvolve").addEventListener("click", () => { shopFromMenu = true; $("shopOv").classList.add("from-menu"); showShop(); });
 $("mCodex").addEventListener("click", showCodex);
-$("mHow").addEventListener("click", () => { $("introGo").textContent = "Back"; openSub("intro"); });
+$("mHow").addEventListener("click", () => { $("introGo").textContent = "Back"; openSub("intro"); startGuide(); });
 $("introGo").addEventListener("click", () => { G.introSeen = true; closeSub("intro"); save(); showMenu(); });
 $("codexBack").addEventListener("click", () => closeSub("codex"));
 
-function showCodex() {
-  const sections = [
-    ["Hosts", Object.keys(HOST_INFO).filter(k => k !== "boss"), k => G.seen.hosts[k], k => HOST_INFO[k][0], k => HOST_INFO[k][1]],
-    ["Bosses", ZONES.map((_, i) => i), k => G.seen.bosses[k], k => ZONES[k].boss, k => ZONES[k].bossText + (G.bosses[k] ? " Defeated. " + ZONES[k].reward + "." : " Reward: " + ZONES[k].reward + ".")],
-    ["Boons", Object.keys(BOONS), k => G.seen.boons[k], k => BOONS[k].name, k => BOONS[k].text],
-    ["Curses", Object.keys(CURSES), k => G.seen.curses[k], k => CURSES[k].name, k => CURSES[k].text],
-    ["Mutations", Object.keys(MUT), k => G.seen.muts[k], k => MUT[k].name, k => MUT[k].text + ". Needs " + Object.entries(MUT[k].needs).map(([u, n]) => UP[u].name + " " + n).join(" and ") + "."]
-  ];
-  let total = 0, found = 0, html = "";
-  for (const [title, keys, seen, name, text] of sections) {
-    const f = keys.filter(k => seen(k)).length; total += keys.length; found += f;
-    html += '<div class="cx-sec"><h3>' + title + ' <span>' + f + " / " + keys.length + "</span></h3><div class='cx-grid'>";
-    for (const k of keys) html += seen(k) ? '<div class="cx"><b>' + name(k) + "</b><span>" + text(k) + "</span></div>" : '<div class="cx locked"><b>???</b><span>Not discovered yet.</span></div>';
-    html += "</div></div>";
-  }
-  $("codexCount").textContent = found + " / " + total + " discovered";
-  $("codexList").innerHTML = html;
-  openSub("codex");
-}
+function showCodex() { codexOpen = null; renderCodex(); openSub("codex"); }
+$("codexSearch").addEventListener("input", e => { codexQuery = e.target.value; renderCodex(); });
 
 $("noReset").addEventListener("click", () => $("confirm").classList.remove("show"));
 $("mErase").addEventListener("click", () => { $("confirm").classList.add("show"); $("noReset").focus(); });
@@ -2330,9 +2752,9 @@ if (away > 5) catchUp(away);
 else if (R.phase === "cards" || R.phase === "start") showCards();
 else if (R.phase === "over") { if (R.stage === "shop") showShop(); else showRunOver(); }
 applySettings();
-if (!G.introSeen) { $("intro").classList.add("show"); startMenuBg(); } else showMenu();
+if (!G.introSeen) { $("intro").classList.add("show"); startMenuBg(); startGuide(); } else showMenu();
 if (document.fonts) document.fonts.ready.then(readColors);
-window.__host = { get G() { return G; }, get R() { return R; }, UP, startNewRun, recomputeMods, hostPos, rangePx, renderPanel: () => renderPanel(), step, autoTick, catchUp, buyPerm, PERM, AUTO, upCost,
+window.__host = { get G() { return G; }, get R() { return R; }, generateWorld, UP, startNewRun, recomputeMods, hostPos, rangePx, renderPanel: () => renderPanel(), step, autoTick, catchUp, buyPerm, PERM, AUTO, upCost,
   setSilent: v => { silent = v; } };
 requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
 })();

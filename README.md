@@ -34,6 +34,22 @@ Replace `www/index.html` with the newest `host.html`, then commit and push.
 A new release with a fresh `Host.apk` appears a few minutes later. Install it over the old one;
 your progress is kept because the app ID stays the same (`com.hostgame.app`).
 
+## In-app updates
+
+The app checks GitHub for a newer release when it starts and every 6 hours. When there is one, the main menu
+shows **"Update available: build N. Tap to download"**. Tapping it downloads the new `Host.apk`; open it to
+install over the old version. Settings shows your current build and has a "Check for updates" button.
+
+This needs the repository to be **public**, because the app reads the releases without signing in.
+(Repo Settings > General > Danger Zone > Change visibility.) With a private repo, updates still build;
+you just download them from the Releases page yourself.
+
+## Working with Claude Code
+
+`CLAUDE.md` tells Claude Code how this project works. Open Claude Code in this folder, describe a change,
+and it edits `www/index.html`, tests it with `tools/smoke.py`, commits and pushes. A few minutes later the
+update shows up in the app.
+
 ## Notes
 
 - This is a debug build, signed with a development key. It's fine for your own phone,
