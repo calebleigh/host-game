@@ -133,7 +133,8 @@ Virulence has `k: 0.02`, Siphon `k: 0.03`. Change one knob at a time and re-run 
    identical; never store or compute positions as fractions of the current screen.
 8. **Auto-choose**: anything undecided is picked automatically after 15s when the window is focused, 5s when
    not (1s with the Reflexes perk). Picking a card yourself pauses it. Auto placement defaults to
-   "Easiest targets". There's an Auto on/off button in the arena corner (red play icon when on, gray pause when off).
+   "Easiest targets". Auto is a switch with no text (accent track, knob right, play icon = on; gray track, knob left,
+   pause icon = off), in the arena corner and next to Continue on the card screen; both stay in sync.
 9. **Run end flow**: one full-screen summary (everything behind it dimmed) with Main menu, Spend DNA and Start
    over. With Auto on, a line says "Next run starts in 15s" with a "Stay here" button; Stay here, Spend DNA or
    Main menu stops it and the countdown line disappears. Closing Spend DNA returns to the summary.
