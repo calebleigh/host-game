@@ -450,7 +450,7 @@ html.rm *, html.rm *::before, html.rm *::after { animation: none !important; tra
 .tabs { gap: 3px; }
 .tab { flex: 1 1 auto; padding: 8px 4px; font-size: 0.78rem; text-align: center; white-space: nowrap; }
 /* ============ phones: give the upgrade list room ============ */
-.panel-handle { display: none; }
+.panel-handle, .panel-hide { display: none; }
 @media (max-width: 760px), (orientation: portrait) and (max-width: 1000px) {
   .app { grid-template-rows: minmax(0, 1fr) minmax(260px, 52%); transition: grid-template-rows .2s ease; }
   /* expanded: the panel slides up over the arena instead of squeezing it */
@@ -465,6 +465,20 @@ html.rm *, html.rm *::before, html.rm *::after { animation: none !important; tra
     font: inherit; font-size: 0.78rem; font-weight: 600; color: var(--muted); background: none; border: 0; padding: 6px 0 2px; cursor: pointer;
   }
   .panel-handle i { width: 36px; height: 4px; border-radius: 2px; background: var(--membrane); }
+  /* hidden: the panel folds down to one slim bar above the footer, and the arena gets the room */
+  .panel-bar { position: relative; }
+  .panel-hide {
+    display: block; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); z-index: 1;
+    font: inherit; font-size: 0.75rem; font-weight: 700; color: var(--muted); background: none; border: 0; padding: 6px 8px; cursor: pointer;
+  }
+  .panel-hide::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 6px 2px 0; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  .panel-hide:focus-visible, .panel-handle:focus-visible { outline: 2px solid var(--bruise); outline-offset: -2px; border-radius: 6px; }
+  .panel-handle b { display: none; color: var(--life); font-weight: 800; }
+  .panel-handle b.ready::after { content: ""; display: inline-block; width: 8px; height: 8px; margin-left: 6px; border-radius: 50%; background: var(--accent-hi); vertical-align: 1px; }
+  .app.panel-off { grid-template-rows: minmax(0, 1fr) auto; }
+  .app.panel-off .panel :is(.purse, .tabs, .list), .app.panel-off .panel-hide { display: none; }
+  .app.panel-off .panel-handle { padding: 9px 0 5px; }
+  .app.panel-off .panel-handle b { display: inline; }
   .purse { margin: 4px 10px 6px; padding: 8px 12px; align-items: center; }
   .lf { font-size: 1.7rem; }
   .lf-label { display: none; }
@@ -704,7 +718,10 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
     </div>
   </div>
   <aside class="panel">
-    <button class="panel-handle" id="panelHandle" aria-expanded="false"><i></i><span>Expand upgrades</span></button>
+    <div class="panel-bar">
+      <button class="panel-hide" id="panelHide" title="Hide the upgrades to give the arena more room">Hide</button>
+      <button class="panel-handle" id="panelHandle" aria-expanded="false"><i></i><span>Expand upgrades</span><b id="panelLf"></b></button>
+    </div>
     <div class="purse">
       <div>
         <div class="lf" id="lf">0</div>
@@ -989,7 +1006,7 @@ const AUTO = {
       { key: "curseRule", label: "Curses", opts: [["mildest", "Mildest"], ["noMap", "Avoid map changes"], ["noImmune", "Avoid immune boosts"]] }] },
   reflexes: { name: "Reflexes", text: "Automatic choices happen after 1 second instead of 15.", cost: 150, needs: 5, toggle: true }
 };
-const DEFAULT_SETTINGS = { main: "#D6336C", accent: "#6A2FA0", theme: "system", motion: "full", floats: true, autoChoose: true, buyFocus: "balanced", placeStyle: "easy", boonFocus: "balanced", curseRule: "mildest" };
+const DEFAULT_SETTINGS = { main: "#D6336C", accent: "#6A2FA0", theme: "system", motion: "full", floats: true, autoChoose: true, hideUpgrades: false, buyFocus: "balanced", placeStyle: "easy", boonFocus: "balanced", curseRule: "mildest" };
 const BOON_TAGS = { longreach: "spread", twin: "spread", bloom: "spread", frenzy: "spread", virulent: "damage", hotstart: "damage", mutagen: "damage",
   richblood: "lifeforce", feast: "lifeforce", windfall: "lifeforce", spare: "survival", slippery: "survival", masked: "survival" };
 const MAP_CURSES = ["vaccinated", "healers", "sentinels", "scattered"], IMMUNE_CURSES = ["vigilant", "fever", "rushed", "alarm"];
@@ -1079,7 +1096,7 @@ function measureHud() {
   legendTop = tops.length ? Math.min(...tops) : H - PAD_BOT;
 }
 function field() {
-  const m = 30; // clearance for host radius, rings and labels
+  const m = Math.max(16, Math.min(30, H * 0.06)); // clearance for host radius, rings and labels (hosts are smaller on short arenas)
   const top = hudBottom + m, bottom = (legendTop || H - PAD_BOT) - m;
   return { x: PAD_X + 14, y: top, w: Math.max(50, W - (PAD_X + 14) * 2), h: Math.max(50, bottom - top) };
 }
@@ -1978,6 +1995,7 @@ function updateHud() {
   updateCountdowns();
   updateAutoBtn();
   updateEvolveDot();
+  renderHandle();
   measureHud();
 }
 let toastTimer;
@@ -2228,14 +2246,29 @@ function updateEvolveDot() {
     Object.keys(AUTO).some(k => !G.auto[k].owned && G.best >= AUTO[k].needs && G.dna >= AUTO[k].cost);
   $("evolveBtn").classList.toggle("ready", can);
 }
-// phones: the upgrade panel can expand to take most of the screen
+// phones: the upgrade panel can expand to take most of the screen, or hide down to one bar
 function setExpanded(ex) {
   document.querySelector(".app").classList.toggle("expanded", ex);
-  $("panelHandle").setAttribute("aria-expanded", ex);
-  $("panelHandle").querySelector("span").textContent = ex ? "Collapse upgrades" : "Expand upgrades";
+  renderHandle();
 }
 const isExpanded = () => document.querySelector(".app").classList.contains("expanded");
-$("panelHandle").addEventListener("click", () => setExpanded(!isExpanded()));
+const canAfford = (k, isMut) => { const d = isMut ? MUT[k] : UP[k], l = isMut ? R.mu[k] : R.lv[k]; return l < d.max && (!isMut || R.found[k]) && R.lf >= runCost(d, l); };
+function renderHandle() {
+  const off = !!G.settings.hideUpgrades, ex = isExpanded();
+  document.querySelector(".app").classList.toggle("panel-off", off);
+  $("panelHandle").setAttribute("aria-expanded", !off && ex);
+  $("panelHandle").querySelector("span").textContent = off ? "Show upgrades" : ex ? "Collapse upgrades" : "Expand upgrades";
+  const lf = $("panelLf");
+  lf.textContent = off ? fmt(R.lf) + " lifeforce" : "";
+  lf.classList.toggle("ready", off && runActive() && (Object.keys(UP).some(k => canAfford(k, false)) || Object.keys(MUT).some(k => canAfford(k, true))));
+}
+function setUpgradesHidden(off) {
+  G.settings.hideUpgrades = off;
+  if (off) document.querySelector(".app").classList.remove("expanded");
+  renderHandle(); save();
+}
+$("panelHandle").addEventListener("click", () => { if (G.settings.hideUpgrades) setUpgradesHidden(false); else setExpanded(!isExpanded()); });
+$("panelHide").addEventListener("click", () => setUpgradesHidden(true));
 // tapping the arena while the panel is expanded just brings the panel back down
 stage.addEventListener("pointerdown", e => {
   if (!isExpanded()) return;

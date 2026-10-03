@@ -139,7 +139,9 @@ world 1 to 3x by world 10. Change one knob at a time and re-run `tools/sim.py`.
 ## Layout and device notes
 
 - Phones: arena on top, upgrade panel below (about 52% height). "Expand upgrades" slides the panel up over the
-  arena; tapping the arena collapses it (and must not place a virus). Tabs fit on one row, even at 320px.
+  arena; tapping the arena collapses it (and must not place a virus). "Hide" folds the panel down to one bar
+  ("Show upgrades", lifeforce, dot when an upgrade is affordable); saved as `G.settings.hideUpgrades`.
+  Tabs fit on one row, even at 320px.
 - Very thin phones (280 to 360px): the zone path stays on one line, titles shrink slightly.
 - Safe areas: backgrounds run edge to edge; content is padded with `--sat/--sab/--sal/--sar`, which take the
   larger of `env(safe-area-inset-*)` and the `--safe-area-inset-*` variables Capacitor injects on Android.
