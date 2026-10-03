@@ -17,7 +17,7 @@
   --muted: #7D6574;
   --stain: #5B2A86;
   --bruise: #8E1F5E;
-  --life: #C2264B;
+  --life: #C2264B; --hp: #D62C2C;
   --husk: #BDB1B7;
   --panel: #FFF7FA;
   --line: #E3C9D2;
@@ -36,14 +36,14 @@
   :root:not([data-theme="light"]) {
     --bg: #150E1A; --slide: #1B1322; --cell: #2E2136; --membrane: #4E3B58;
     --ink: #F2E4ED; --muted: #A8949F; --stain: #B48CFF; --bruise: #F0629E;
-    --life: #FF5C7A; --husk: #463C4B; --panel: #1F1626; --line: #36283F;
+    --life: #FF5C7A; --hp: #FF6B6B; --husk: #463C4B; --panel: #1F1626; --line: #36283F;
     --btn: #B48CFF; --btn-ink: #1A1020; --heal: #5FD3BF; --tray: #0D0811;
   }
 }
 :root[data-theme="dark"] {
   --bg: #150E1A; --slide: #1B1322; --cell: #2E2136; --membrane: #4E3B58;
   --ink: #F2E4ED; --muted: #A8949F; --stain: #B48CFF; --bruise: #F0629E;
-  --life: #FF5C7A; --husk: #463C4B; --panel: #1F1626; --line: #36283F;
+  --life: #FF5C7A; --hp: #FF6B6B; --husk: #463C4B; --panel: #1F1626; --line: #36283F;
   --btn: #B48CFF; --btn-ink: #1A1020; --heal: #5FD3BF; --tray: #0D0811;
 }
 *, *::before, *::after { box-sizing: inherit; }
@@ -432,19 +432,17 @@ html.rm *, html.rm *::before, html.rm *::after { animation: none !important; tra
 .screen-head h2, .menu-screen .wordmark { text-shadow: none; }
 /* top-right run status */
 .toast { white-space: normal; text-align: center; max-width: min(92%, 460px); width: max-content; line-height: 1.4; }
-.hud-right { position: absolute; top: 0; right: 0; text-align: right; line-height: 1.3; }
+/* top row: level name left, what happens next in the middle, viruses right */
+.hud-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.hud .world { font-size: 1.05rem; }
+.world small { font-size: 0.75rem; }
+.hud-right { text-align: right; line-height: 1.3; white-space: nowrap; }
 .hud-vir { font-size: 1.05rem; }
 .hud-label { font-size: 0.78rem; color: var(--muted); font-weight: 600; letter-spacing: 0.02em; vertical-align: middle; }
 .hud-vir .lives { font-size: 1.1rem; }
-.hud-next { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+.hud-next { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-align: center; line-height: 1.2; }
 .hud-next.act { color: var(--bruise); }
-.ladder { margin-top: 14px; } /* clears the two status lines at the top right */
-@media (max-width: 760px), (orientation: portrait) and (max-width: 1000px) {
-  .hud-right { top: 0; }
-  .world { padding-right: 130px; }
-  .world small { display: block; margin-top: 2px; }
-  .ladder { margin-top: 12px; }
-}
+.ladder { margin-top: 6px; }
 /* tabs fill the width and wrap onto a second row only when they must */
 .tabs { display: flex; flex-wrap: wrap; }
 .tabs { gap: 3px; }
@@ -452,7 +450,8 @@ html.rm *, html.rm *::before, html.rm *::after { animation: none !important; tra
 /* ============ phones: give the upgrade list room ============ */
 .panel-bar { display: none; }
 @media (max-width: 760px), (orientation: portrait) and (max-width: 1000px) {
-  .app { grid-template-rows: minmax(0, 1fr) minmax(260px, 52%); transition: grid-template-rows .2s ease; }
+  /* no transition here: the row can't animate to or from "auto", and trying made the panel jump to full height first */
+  .app { grid-template-rows: minmax(0, 1fr) minmax(260px, 52%); }
   /* host area hidden: the upgrades cover only the hosts; the world name, path and cure countdown stay visible */
   .panel { transition: height .2s ease; }
   .app.expanded .panel {
@@ -500,14 +499,23 @@ html.rm *, html.rm *::before, html.rm *::after { animation: none !important; tra
   .foot-btn.evolve { padding: 8px 12px; }
   .rate { grid-template-columns: 1fr; font-size: 0.72rem; }
   .purse .dna { white-space: nowrap; }
-  .world { font-size: 1.25rem; padding-right: 118px; }
-  .hud-next { font-size: 0.75rem; }
+  .hud .world { font-size: 0.95rem; }
+  .hud-next { font-size: 0.72rem; }
+  .hud-top { gap: 6px; }
   .hud-vir .lives { font-size: 0.95rem; }
 }
-/* run footer: Strain left, Evolve center, Main menu right */
+/* run footer: Strain and Evolve in the center as a tab bar like the upgrade tabs, Settings as a cog on the right */
 .foot { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 0 12px; padding: 12px 0 12px; border-top: 1px solid var(--line); }
-.foot #strainBtn { justify-self: start; }
-.foot #settingsBtn { justify-self: end; }
+.foot-tabs { display: flex; gap: 3px; padding: 4px; background: var(--tray); border-radius: 8px; }
+.foot-tabs .tab { position: relative; flex: 0 0 auto; padding: 8px 18px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+#evolveBtn.ready::after { content: ""; position: absolute; top: 4px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-hi); }
+.cog-btn {
+  justify-self: end; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; cursor: pointer;
+  color: #fff; background: var(--tray); border: 0; border-radius: 8px; box-shadow: var(--lift);
+}
+.cog-btn svg { width: 22px; height: 22px; fill: currentColor; fill-rule: evenodd; }
+.cog-btn:hover { filter: brightness(1.15); }
+.cog-btn:focus-visible { outline: 2.5px solid var(--bruise); outline-offset: 2px; }
 .foot-btn {
   position: relative; font: inherit; font-weight: 800; font-size: 0.85rem; border: 0; border-radius: 6px; padding: 8px 14px; cursor: pointer; box-shadow: var(--lift);
 }
@@ -640,14 +648,16 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
   <div class="stage" id="stage">
     <canvas id="cv"></canvas>
     <div class="hud">
-      <h1 class="world" id="worldName" tabindex="0">World 1</h1>
+      <div class="hud-top">
+        <h1 class="world" id="worldName" tabindex="0">World 1</h1>
+        <div class="hud-next" id="hudNext"></div>
+        <div class="hud-right" id="hudRight">
+          <div class="hud-vir"><span class="hud-label">Viruses</span> <b class="lives" id="lives"></b></div>
+        </div>
+      </div>
       <div class="path-wrap">
         <div class="ladder" id="ladder"></div>
         <div class="curebar" id="cureBar"><span class="cure-l">Cure</span><div class="cure-track"><i id="cureFill"></i></div><span id="cureTxt"></span></div>
-      </div>
-      <div class="hud-right" id="hudRight">
-        <div class="hud-vir"><span class="hud-label">Viruses</span> <b class="lives" id="lives"></b></div>
-        <div class="hud-next" id="hudNext"></div>
       </div>
     </div>
     <div class="legend" id="legend"></div>
@@ -728,9 +738,12 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
     <div class="tabs" role="tablist" id="tabs"></div>
     <div class="list" id="list" role="tabpanel"></div>
     <div class="foot">
-      <button class="foot-btn strain" id="strainBtn">Strain</button>
-      <button class="foot-btn evolve" id="evolveBtn">Evolve</button>
-      <button class="menu-foot-btn" id="settingsBtn">Settings</button>
+      <span></span>
+      <div class="foot-tabs">
+        <button class="tab" id="strainBtn">Strain</button>
+        <button class="tab" id="evolveBtn">Evolve</button>
+      </div>
+      <button class="cog-btn" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg></button>
     </div>
   </aside>
 </div>
@@ -1981,7 +1994,7 @@ function updateHud() {
   $("cureTxt").textContent = days + (days === 1 ? " day" : " days");
   $("hudNext").textContent = next;
   $("hudNext").classList.toggle("act", act);
-  $("hudRight").style.visibility = R.phase === "idle" ? "hidden" : "visible";
+  $("hudRight").style.visibility = $("hudNext").style.visibility = R.phase === "idle" ? "hidden" : "visible";
   if (menuOpen && Math.random() < 0.2) refreshMenuStatus();
   updateCountdowns();
   updateAutoBtn();
@@ -2000,7 +2013,7 @@ function toast(msg, ms) {
 let C = {};
 function readColors() {
   const cs = getComputedStyle(document.documentElement);
-  for (const k of ["slide", "cell", "membrane", "ink", "muted", "stain", "bruise", "life", "husk", "heal"]) C[k] = cs.getPropertyValue("--" + k).trim();
+  for (const k of ["slide", "cell", "membrane", "ink", "muted", "stain", "bruise", "life", "husk", "heal", "hp"]) C[k] = cs.getPropertyValue("--" + k).trim();
 }
 function draw() {
   ctx.fillStyle = C.slide; ctx.fillRect(0, 0, W, H);
@@ -2091,7 +2104,7 @@ function draw() {
     }
     if (h.hp < h.max) {
       ctx.beginPath(); ctx.arc(x, y, r + (h.carrier ? 8 : 4), -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (h.hp / h.max));
-      ctx.strokeStyle = C.life; ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.stroke(); ctx.lineCap = "butt";
+      ctx.strokeStyle = C.hp; ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.stroke(); ctx.lineCap = "butt";
     }
     if (picking && i === R.lastPz) {
       ctx.fillStyle = C.muted; ctx.textAlign = "center"; ctx.font = "500 11px 'Bricolage Grotesque', system-ui, sans-serif";
@@ -2325,7 +2338,7 @@ function drawMini(c, x, y, r, o) {
   }
   if (o.hp !== undefined && o.hp < 1) {
     c.beginPath(); c.arc(x, y, r + (o.carrier ? 8 : 4), -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0, o.hp));
-    c.strokeStyle = C.life; c.lineWidth = 2.5; c.lineCap = "round"; c.stroke(); c.lineCap = "butt";
+    c.strokeStyle = C.hp; c.lineWidth = 2.5; c.lineCap = "round"; c.stroke(); c.lineCap = "butt";
   }
 }
 function miniLabel(c, text, x, y, color, weight) {
@@ -2755,7 +2768,9 @@ function applyColors() {
   set("bruise", virus);
   set("accent", mixHex(acc, "#C0204A", 0.45));
   set("accent-hi", mixHex(acc, "#ffffff", 0.4));
-  // lifeforce: the big counter, health rings around hosts and the floating +numbers
+  // host health rings are always red, whatever the colors (a lighter red in dark mode)
+  set("hp", dark ? "#FF6B6B" : "#D62C2C");
+  // lifeforce: the big counter and the floating +numbers
   set("life", dark ? mixHex(acc, "#ffffff", 0.4) : mixHex(acc, "#ff3366", 0.15));
 }
 if (window.matchMedia) { const mqc = matchMedia("(prefers-color-scheme: dark)"); if (mqc.addEventListener) mqc.addEventListener("change", () => { if (G) { applyColors(); readColors(); } }); }

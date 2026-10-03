@@ -129,7 +129,7 @@ world 1 to 3x by world 10. Change one knob at a time and re-run `tools/sim.py`.
 10. **Explain things in game**: host types in the legend tooltips, why a virus died (toast), fought-off markers,
     the How to play guide with animations, and the Codex.
 11. **Theme**: Settings has Main color (tints the whole app: backgrounds, panels, cells, borders, tray) and
-    Accent color (buttons, tabs, boons, the virus, lifeforce, health rings, highlights). Never hard-code
+    Accent color (buttons, tabs, boons, the virus, lifeforce, highlights). Host health rings are always red (`--hp`). Never hard-code
     purple/pink; use the CSS variables (`--main`, `--accent`, `--accent-hi`, `--stain`, `--bruise`, `--life`,
     `--tray`, `--bg`, `--slide`, `--cell`, `--membrane`, `--line`, `--panel`, `--ink`, `--muted`).
     `applyColors()` computes them, with lighter versions for dark mode.
@@ -148,7 +148,7 @@ world 1 to 3x by world 10. Change one knob at a time and re-run `tools/sim.py`.
   larger of `env(safe-area-inset-*)` and the `--safe-area-inset-*` variables Capacitor injects on Android.
 - Popups (Settings, Codex, How to play, Evolve, Strain) are sheets with a fixed header and footer and a
   scrolling middle; they must fit short screens (test at 412x560).
-- The run footer is Strain (left), Evolve (center, pink dot when something is affordable), Settings (right).
+- The run footer is Strain and Evolve in a centered tab bar (pink dot on Evolve when something is affordable) and a Settings cog on the right.
   Main menu is reached from the top of Settings or with Esc.
 
 ## Gotchas
