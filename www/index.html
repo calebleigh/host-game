@@ -200,6 +200,8 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .pcard {
   font: inherit; text-align: left; background: var(--slide); color: var(--ink);
   border: 1.5px solid var(--line); border-radius: 8px; padding: 10px; cursor: pointer; min-height: 88px;
+  /* text starts at the top, even on cards with short text (buttons center it by default) */
+  display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch;
 }
 .pcard b { display: block; font-size: 0.95rem; margin-bottom: 4px; }
 .pcard span { font-size: 0.82rem; color: var(--muted); line-height: 1.35; display: block; }
