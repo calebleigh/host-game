@@ -227,7 +227,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   background: var(--line); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 10%, transparent); transition: background .15s ease;
 }
 .autobtn .knob {
-  position: absolute; top: 3px; left: 3px; width: calc(var(--sh) - 6px); height: calc(var(--sh) - 6px); border-radius: 5px; display: grid; place-items: center;
+  pointer-events: none; position: absolute; top: 3px; left: 3px; width: calc(var(--sh) - 6px); height: calc(var(--sh) - 6px); border-radius: 5px; display: grid; place-items: center;
   background: #fff; color: var(--muted); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: transform .15s ease;
 }
 .autobtn .knob svg { width: calc(var(--sh) * 0.34); height: calc(var(--sh) * 0.34); fill: currentColor; }
@@ -1755,6 +1755,8 @@ const PLAY_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1 L11
 function updateAutoBtn() {
   const on = G.settings.autoChoose;
   for (const b of [$("autoBtn"), $("cardsAutoBtn")]) {
+    // only redraw when it changes: replacing the knob mid-tap made some taps get lost
+    if (b.getAttribute("aria-pressed") === String(on) && b.firstChild) continue;
     b.setAttribute("aria-pressed", on);
     b.innerHTML = '<span class="knob">' + (on ? PLAY_ICON : PAUSE_ICON) + "</span>";
     b.title = on ? "Auto is on: anything you don't decide in time is decided for you. Tap to turn it off." : "Auto is off: nothing happens until you choose. Tap to turn it on.";
