@@ -27,6 +27,7 @@
   <label>Open (landscape) <input id="bw" type="number"> x <input id="bh" type="number"></label>
   <button id="reload">Reload both</button>
   <button id="reset">Fold 8 sizes</button>
+  <label title="The closed screen runs the game and the open screen copies it. Taps on either one happen on both."><input id="sync" type="checkbox" style="width:auto"> Sync both screens</label>
 </header>
 <main id="main">
   <div class="dev"><div class="name" id="an"></div><div class="box" id="abox"><iframe id="a"></iframe></div></div>
@@ -57,6 +58,22 @@ function layout() {
   }
 }
 addEventListener("resize", layout); layout();
+
+// Sync: the closed screen leads (runs the game), the open screen follows (draws the leader's state).
+// The game only listens for this inside the preview; see "preview mirror" in www/index.html.
+let sync = true;
+try { sync = localStorage.getItem("host-preview-sync") !== "0"; } catch (e) {}
+$("sync").checked = sync;
+const roles = () => [["a", sync ? "lead" : null], ["b", sync ? "follow" : null]];
+function sendRoles() { for (const [f, role] of roles()) $(f).contentWindow.postMessage({ hostMirror: 1, role }, "*"); }
+$("a").addEventListener("load", sendRoles); $("b").addEventListener("load", sendRoles);
+$("sync").onchange = () => { sync = $("sync").checked; try { localStorage.setItem("host-preview-sync", sync ? "1" : "0"); } catch (e) {} sendRoles(); };
+// pass messages from one copy to the other
+addEventListener("message", e => {
+  if (!sync || !e.data || !e.data.hostMirror) return;
+  const to = e.source === $("a").contentWindow ? $("b") : e.source === $("b").contentWindow ? $("a") : null;
+  if (to) to.contentWindow.postMessage(e.data, "*");
+});
 </script>
 </body>
 </html>

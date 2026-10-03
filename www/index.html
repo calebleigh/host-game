@@ -983,6 +983,7 @@ function headStartLf(l) { return l ? 60 * l * Math.pow(1.5, l) : 0; }
 // ================= state =================
 // G = permanent meta, R = current run
 let G, R, M;
+let mirror = null; // "lead" or "follow" inside tools/preview.html, otherwise null (see "preview mirror")
 function newMeta() {
   const p = {}; for (const k in PERM) p[k] = 0;
   const a = {}; for (const k in AUTO) a[k] = { owned: false, on: true };
@@ -1288,8 +1289,8 @@ function nearby(src, range, filter) {
   c.sort((a, b) => a[0] - b[0]);
   return c.map(e => e[1]);
 }
-function link(a, b) { if (!silent) links.push({ a, b, t: 0 }); }
-function float(h, text, soft) { if (silent || G.settings.floats === false) return; const [x, y] = hostPos(h); floats.push({ x, y, text, t: 0, soft }); }
+function link(a, b) { if (!silent) { links.push({ a, b, t: 0 }); mirrorFx("link", R.hosts.indexOf(a), R.hosts.indexOf(b)); } }
+function float(h, text, soft) { if (silent || G.settings.floats === false) return; const [x, y] = hostPos(h); floats.push({ x, y, text, t: 0, soft }); mirrorFx("float", R.hosts.indexOf(h), text, soft); }
 function spreadFrom(src) {
   if (Math.random() > bounceChance(R.lv.bounce)) return;
   const range = rangePx() * (src.carrier ? 1.6 : 1);
@@ -1715,6 +1716,7 @@ cv.addEventListener("pointerdown", e => {
   if (!h || h.dead) return;
   if (h.vacc) { toast("That host is vaccinated"); return; }
   if (h.sentinel) { toast("Sentinels resist until a neighbor dies"); return; }
+  if (mirror === "follow") { mirrorSend({ place: R.hosts.indexOf(h) }); return; }
   place(h); updateHud(); save();
 });
 
@@ -1951,6 +1953,7 @@ function updateHud() {
 }
 let toastTimer;
 function toast(msg, ms) {
+  mirrorFx("toast", msg, ms);
   const t = $("toast"); t.textContent = msg; t.classList.add("show");
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), ms || 2600);
 }
@@ -2089,8 +2092,9 @@ function frame(ts) {
 function tick(ts) {
   let dt = (ts - last) / 1000; last = ts;
   if (!(dt >= 0)) dt = 0;
-  if (dt > 1) { catchUp(dt); return; }
-  now += dt; step(dt); autoTick(dt);
+  const follow = mirror === "follow"; // a mirrored copy only draws; the leading copy runs the game
+  if (dt > 1) { if (follow) dt = 0; else { catchUp(dt); return; } }
+  now += dt; if (!follow) { step(dt); autoTick(dt); }
   links.forEach(l => l.t += dt); links = links.filter(l => l.t < 1.5);
   floats.forEach(f => f.t += dt); floats = floats.filter(f => f.t < 1.4);
   hudAcc += dt; saveAcc += dt;
@@ -2101,6 +2105,7 @@ function tick(ts) {
   }
   if (saveAcc > 5) { saveAcc = 0; save(); }
   draw();
+  if (mirror === "lead") mirrorLead();
 }
 // offline / background progress
 function catchUp(secs) {
@@ -2137,6 +2142,7 @@ function catchUp(secs) {
 // ================= save =================
 const KEY = "host-save-v3";
 function save() {
+  if (mirror === "follow") return; // the leading copy saves for both
   G.savedAt = Date.now();
   try { localStorage.setItem(KEY, JSON.stringify({ G, R })); } catch (e) { $("saveNote").textContent = "Progress won't save in this browser"; }
 }
@@ -2775,6 +2781,72 @@ else if (R.phase === "over") { if (R.stage === "shop") showShop(); else showRunO
 applySettings();
 if (!G.introSeen) { $("intro").classList.add("show"); startMenuBg(); startGuide(); } else showMenu();
 if (document.fonts) document.fonts.ready.then(readColors);
+// ================= preview mirror =================
+// tools/preview.html shows two copies of the game side by side and can sync them. It makes one copy "lead"
+// (it runs the game and sends its whole state every frame) and the other "follow" (it only draws that state).
+// Button taps are repeated in the other copy, and tapping a host in the follower places the virus in the leader.
+// Nothing here runs unless the preview page asks for it.
+let mirrorQ = [], mirrorUi = "", mirrorPanel = "", mirrorSet = "";
+function mirrorSend(m) { if (mirror && parent !== window) parent.postMessage(Object.assign({ hostMirror: 1 }, m), "*"); }
+function mirrorFx(...fx) { if (mirror === "lead") mirrorQ.push(fx); }
+function mirrorLead() {
+  try { mirrorSend({ state: { G, R, now, rateWindow }, fx: mirrorQ }); }
+  catch (e) { mirrorSend({ state: JSON.stringify({ G, R, now, rateWindow }), fx: mirrorQ }); }
+  mirrorQ = [];
+}
+function mirrorFollow(s, fx) {
+  G = s.G; R = s.R; now = s.now; rateWindow = s.rateWindow;
+  const panel = JSON.stringify([R.lv, R.mu, R.world, R.phase, R.boons, R.curses, G.p, G.auto]);
+  if (panel !== mirrorPanel) { mirrorPanel = panel; recomputeMods(); panelDirty = true; if ($("shopOv").classList.contains("show")) renderShop(); }
+  const set = JSON.stringify(G.settings);
+  if (set !== mirrorSet) { mirrorSet = set; applySettings(); }
+  const ui = JSON.stringify([R.phase, R.stage, R.seed, R.offer, R.pickB, R.pickC, R.rerolls, R.touched]);
+  if (ui !== mirrorUi) { mirrorUi = ui; mirrorOverlays(); }
+  for (const [kind, a, b, c] of fx || []) {
+    if (kind === "toast") toast(a, b);
+    else if (kind === "float" && R.hosts[a]) float(R.hosts[a], b, c);
+    else if (kind === "link" && R.hosts[a] && R.hosts[b]) link(R.hosts[a], R.hosts[b]);
+  }
+}
+// popups that the leader opened on its own (cards after a world, run summary, Evolve after a run)
+function mirrorOverlays() {
+  if (R.phase === "start" || R.phase === "cards") showCards(); else $("cardsOv").classList.remove("show");
+  if (R.phase === "over" && R.stage === "summary") { if (!$("overlay").classList.contains("show")) showRunOver(); }
+  else $("overlay").classList.remove("show");
+  if (R.phase === "over" && R.stage === "shop") { if (!$("shopOv").classList.contains("show")) showShop(); }
+  else if (!shopFromMenu && !shopFromRun) $("shopOv").classList.remove("show");
+}
+// an element is found in the other copy by the nearest id above it plus child positions
+function mirrorPath(el) {
+  const path = [];
+  while (el && el.parentElement && el !== document.body && !el.id) { path.unshift([...el.parentElement.children].indexOf(el)); el = el.parentElement; }
+  return { id: el && el.id || null, path };
+}
+function mirrorFind(p) {
+  let el = p.id ? document.getElementById(p.id) : document.body;
+  for (const i of p.path) el = el && el.children[i];
+  return el;
+}
+document.addEventListener("click", e => { if (mirror && e.isTrusted && e.target !== cv) mirrorSend({ click: mirrorPath(e.target) }); }, true);
+for (const type of ["input", "change"])
+  document.addEventListener(type, e => { if (mirror && e.isTrusted && "value" in e.target) mirrorSend({ input: mirrorPath(e.target), type, value: e.target.value }); }, true);
+document.addEventListener("keydown", e => { if (mirror && e.isTrusted && e.key === "Escape") mirrorSend({ key: "Escape" }); }, true);
+addEventListener("message", e => {
+  const d = e.data;
+  if (e.source !== parent || parent === window || !d || !d.hostMirror) return;
+  if ("role" in d) { mirror = d.role; mirrorUi = mirrorPanel = mirrorSet = ""; mirrorQ = []; return; }
+  if (d.state && mirror === "follow") mirrorFollow(typeof d.state === "string" ? JSON.parse(d.state) : d.state, d.fx);
+  if (d.place !== undefined && mirror === "lead") {
+    const h = R.hosts[d.place];
+    if (R.phase === "pick" && h && !h.dead && !h.vacc && !h.sentinel) { place(h); updateHud(); save(); }
+  }
+  if (d.click) {
+    const el = mirrorFind(d.click);
+    if (el) { el.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })); }
+  }
+  if (d.input) { const el = mirrorFind(d.input); if (el) { el.value = d.value; el.dispatchEvent(new Event(d.type, { bubbles: true })); } }
+  if (d.key) document.dispatchEvent(new KeyboardEvent("keydown", { key: d.key, bubbles: true }));
+});
 window.__host = { get G() { return G; }, get R() { return R; }, generateWorld, UP, startNewRun, recomputeMods, hostPos, rangePx, renderPanel: () => renderPanel(), step, autoTick, catchUp, buyPerm, PERM, AUTO, upCost,
   setSilent: v => { silent = v; } };
 requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });

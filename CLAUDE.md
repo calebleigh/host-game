@@ -27,6 +27,8 @@ android/                       Capacitor 8 Android project (committed, generated
 .github/workflows/build-apk.yml   builds the APK and publishes release "build-N" with Host.apk
 tools/smoke.py                 headless smoke test, screenshots to tools/shots/ (git-ignored)
 tools/sim.py                   headless balance simulator (fully automated play for N hours)
+tools/preview.html             Fold 8 closed + open side by side; "Sync" mirrors one run on both
+                               (uses the "preview mirror" section of the game, inactive outside the preview)
 ```
 
 ### Build pipeline (GitHub Actions)
