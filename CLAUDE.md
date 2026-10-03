@@ -172,6 +172,5 @@ world 1 to 3x by world 10. Change one knob at a time and re-run `tools/sim.py`.
 
 ## Open ideas (not started, check with Caleb first)
 
-- An "Active effects" row for cards that don't map to an upgrade (Hot start, Hardy stock, Alarm, map curses).
 - Bundling the font locally so it looks the same offline.
 - A release (signed) build if he ever wants the Play Store.
