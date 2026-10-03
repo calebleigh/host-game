@@ -450,35 +450,30 @@ html.rm *, html.rm *::before, html.rm *::after { animation: none !important; tra
 .tabs { gap: 3px; }
 .tab { flex: 1 1 auto; padding: 8px 4px; font-size: 0.78rem; text-align: center; white-space: nowrap; }
 /* ============ phones: give the upgrade list room ============ */
-.panel-handle, .panel-hide { display: none; }
+.panel-bar { display: none; }
 @media (max-width: 760px), (orientation: portrait) and (max-width: 1000px) {
   .app { grid-template-rows: minmax(0, 1fr) minmax(260px, 52%); transition: grid-template-rows .2s ease; }
-  /* expanded: the panel slides up over the arena instead of squeezing it */
+  /* host area hidden: the upgrades cover only the hosts; the world name, path and cure countdown stay visible */
   .panel { transition: height .2s ease; }
   .app.expanded .panel {
-    position: fixed; left: 0; right: 0; bottom: 0; height: 80%; z-index: 15;
+    position: fixed; left: 0; right: 0; bottom: 0; top: calc(var(--hud-bottom, 0px) + 8px); z-index: 15;
     padding-bottom: var(--sab);
-    border-radius: 14px 14px 0 0; box-shadow: 0 -12px 36px color-mix(in srgb, var(--ink) 25%, transparent);
+    border-radius: 14px 14px 0 0; box-shadow: 0 -8px 24px color-mix(in srgb, var(--ink) 18%, transparent);
   }
-  .panel-handle {
-    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
-    font: inherit; font-size: 0.78rem; font-weight: 600; color: var(--muted); background: none; border: 0; padding: 6px 0 2px; cursor: pointer;
+  /* the bar above the panel: upgrades button on the left, host area button on the right, always in the same spots */
+  .panel-bar { display: flex; justify-content: space-between; align-items: center; padding: 3px 6px 0; }
+  .panel-btn {
+    position: relative; display: inline-flex; align-items: center; gap: 7px;
+    font: inherit; font-size: 0.76rem; font-weight: 700; color: var(--muted); background: none; border: 0; padding: 6px 8px; cursor: pointer;
   }
-  .panel-handle i { width: 36px; height: 4px; border-radius: 2px; background: var(--membrane); }
-  /* hidden: the panel folds down to one slim bar above the footer, and the arena gets the room */
-  .panel-bar { position: relative; }
-  .panel-hide {
-    display: block; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); z-index: 1;
-    font: inherit; font-size: 0.75rem; font-weight: 700; color: var(--muted); background: none; border: 0; padding: 6px 8px; cursor: pointer;
-  }
-  .panel-hide::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 6px 2px 0; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); }
-  .panel-hide:focus-visible, .panel-handle:focus-visible { outline: 2px solid var(--bruise); outline-offset: -2px; border-radius: 6px; }
-  .panel-handle b { display: none; color: var(--life); font-weight: 800; }
-  .panel-handle b.ready::after { content: ""; display: inline-block; width: 8px; height: 8px; margin-left: 6px; border-radius: 50%; background: var(--accent-hi); vertical-align: 1px; }
+  .panel-btn:hover { color: var(--ink); }
+  .panel-btn:focus-visible { outline: 2px solid var(--bruise); outline-offset: -2px; border-radius: 6px; }
+  .chev { display: inline-block; width: 6px; height: 6px; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 3px; }
+  .chev.flip { transform: rotate(-135deg); margin: 3px 0 0; }
+  #panelHide.ready::after { content: ""; position: absolute; top: 3px; right: -4px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-hi); }
+  /* upgrades hidden: the overview card and the tab names stay, the list folds away */
   .app.panel-off { grid-template-rows: minmax(0, 1fr) auto; }
-  .app.panel-off .panel :is(.purse, .tabs, .list), .app.panel-off .panel-hide { display: none; }
-  .app.panel-off .panel-handle { padding: 9px 0 5px; }
-  .app.panel-off .panel-handle b { display: inline; }
+  .app.panel-off .panel .list { display: none; }
   .purse { margin: 4px 10px 6px; padding: 8px 12px; align-items: center; }
   .lf { font-size: 1.7rem; }
   .lf-label { display: none; }
@@ -561,17 +556,12 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
 .ladder .step.cur::before { color: var(--bruise); font-weight: 800; }
 /* cure countdown: a bar exactly as wide as the zone path, right under it */
 .path-wrap { width: fit-content; max-width: 100%; margin: 0 auto; }
-/* a thin bar with full-size text centered over it; the text spills past the bar, with a halo to stay readable */
-.curebar {
-  position: relative; height: 8px; margin: 12px 0 6px; border-radius: 4px;
-  background: var(--slide); box-shadow: inset 0 0 0 1px var(--line);
-}
-.curebar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: inherit; background: color-mix(in srgb, var(--heal) 60%, transparent); }
-.curebar span {
-  position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; line-height: 1; white-space: nowrap;
-  font-size: 0.72rem; font-weight: 700; color: var(--ink);
-  text-shadow: 0 0 3px var(--slide), 0 0 3px var(--slide), 0 0 2px var(--slide);
-}
+/* "Cure" on the left, a thin bar, and the days left on the right; the bar shares the path's width with the labels */
+.curebar { display: flex; align-items: center; gap: 8px; margin: 8px 0 4px; font-size: 0.72rem; font-weight: 700; line-height: 1; white-space: nowrap; color: var(--muted); }
+.curebar .cure-l { color: var(--ink); }
+.cure-track { position: relative; flex: 1; height: 8px; border-radius: 4px; background: var(--slide); box-shadow: inset 0 0 0 1px var(--line); }
+.cure-track i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: inherit; background: color-mix(in srgb, var(--heal) 60%, transparent); }
+#cureTxt { min-width: 4.6em; text-align: right; font-variant-numeric: tabular-nums; }
 .curebar.idle { visibility: hidden; }
 .up .eff .buffed { color: var(--bruise); font-weight: 700; cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
 .up .eff .buffed:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2px; border-radius: 3px; }
@@ -653,7 +643,7 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
       <h1 class="world" id="worldName" tabindex="0">World 1</h1>
       <div class="path-wrap">
         <div class="ladder" id="ladder"></div>
-        <div class="curebar" id="cureBar"><i id="cureFill"></i><span id="cureTxt"></span></div>
+        <div class="curebar" id="cureBar"><span class="cure-l">Cure</span><div class="cure-track"><i id="cureFill"></i></div><span id="cureTxt"></span></div>
       </div>
       <div class="hud-right" id="hudRight">
         <div class="hud-vir"><span class="hud-label">Viruses</span> <b class="lives" id="lives"></b></div>
@@ -719,8 +709,8 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
   </div>
   <aside class="panel">
     <div class="panel-bar">
-      <button class="panel-hide" id="panelHide" title="Hide the upgrades to give the arena more room">Hide</button>
-      <button class="panel-handle" id="panelHandle" aria-expanded="false"><i></i><span>Expand upgrades</span><b id="panelLf"></b></button>
+      <button class="panel-btn" id="panelHide"><i class="chev"></i><span>Hide upgrades</span></button>
+      <button class="panel-btn" id="panelHandle" aria-expanded="false"><span>Hide host area</span><i class="chev flip"></i></button>
     </div>
     <div class="purse">
       <div>
@@ -1092,6 +1082,7 @@ function measureHud() {
   const sr = stage.getBoundingClientRect();
   const hud = document.querySelector(".hud");
   hudBottom = hud ? Math.max(40, hud.getBoundingClientRect().bottom - sr.top) : PAD_TOP;
+  if (hud) document.documentElement.style.setProperty("--hud-bottom", Math.round(hud.getBoundingClientRect().bottom) + "px"); // where "Hide host area" stops
   const tops = [$("legend"), $("autoBtn")].map(el => el && el.offsetHeight ? el.getBoundingClientRect().top - sr.top : H).filter(v => v > 0);
   legendTop = tops.length ? Math.min(...tops) : H - PAD_BOT;
 }
@@ -1778,7 +1769,7 @@ function renderTabs() {
     if (t.id === "mutations" && Object.keys(MUT).some(k => R.found[k] && R.mu[k] === 0)) {
       const d = document.createElement("span"); d.className = "dot"; b.appendChild(d);
     }
-    b.addEventListener("click", () => { tab = t.id; renderTabs(); renderPanel(); });
+    b.addEventListener("click", () => { tab = t.id; renderTabs(); renderPanel(); if (G.settings.hideUpgrades) setUpgradesHidden(false); });
     el.appendChild(b);
   }
 }
@@ -1987,7 +1978,7 @@ function updateHud() {
   const days = Math.max(0, Math.ceil((1 - R.cure) * cureTime()));
   $("cureBar").classList.toggle("idle", !cureOn);
   $("cureFill").style.width = (cureOn ? Math.min(1, R.cure) * 100 : 0) + "%";
-  $("cureTxt").textContent = "Cure in " + days + (days === 1 ? " day" : " days");
+  $("cureTxt").textContent = days + (days === 1 ? " day" : " days");
   $("hudNext").textContent = next;
   $("hudNext").classList.toggle("act", act);
   $("hudRight").style.visibility = R.phase === "idle" ? "hidden" : "visible";
@@ -2253,22 +2244,30 @@ function setExpanded(ex) {
 }
 const isExpanded = () => document.querySelector(".app").classList.contains("expanded");
 const canAfford = (k, isMut) => { const d = isMut ? MUT[k] : UP[k], l = isMut ? R.mu[k] : R.lv[k]; return l < d.max && (!isMut || R.found[k]) && R.lf >= runCost(d, l); };
+// left button: hide or show the upgrade list (the overview card and tab names stay, a dot means you can buy something)
+// right button: hide or show the host area (the upgrades then cover the whole screen)
 function renderHandle() {
   const off = !!G.settings.hideUpgrades, ex = isExpanded();
   document.querySelector(".app").classList.toggle("panel-off", off);
-  $("panelHandle").setAttribute("aria-expanded", !off && ex);
-  $("panelHandle").querySelector("span").textContent = off ? "Show upgrades" : ex ? "Collapse upgrades" : "Expand upgrades";
-  const lf = $("panelLf");
-  lf.textContent = off ? fmt(R.lf) + " lifeforce" : "";
-  lf.classList.toggle("ready", off && runActive() && (Object.keys(UP).some(k => canAfford(k, false)) || Object.keys(MUT).some(k => canAfford(k, true))));
+  const hide = $("panelHide"), host = $("panelHandle");
+  hide.querySelector("span").textContent = off ? "Show upgrades" : "Hide upgrades";
+  hide.querySelector(".chev").classList.toggle("flip", off);
+  hide.setAttribute("aria-expanded", !off);
+  hide.classList.toggle("ready", off && runActive() && (Object.keys(UP).some(k => canAfford(k, false)) || Object.keys(MUT).some(k => canAfford(k, true))));
+  host.querySelector("span").textContent = ex ? "Show host area" : "Hide host area";
+  host.querySelector(".chev").classList.toggle("flip", !ex);
+  host.setAttribute("aria-expanded", ex);
 }
 function setUpgradesHidden(off) {
   G.settings.hideUpgrades = off;
   if (off) document.querySelector(".app").classList.remove("expanded");
   renderHandle(); save();
 }
-$("panelHandle").addEventListener("click", () => { if (G.settings.hideUpgrades) setUpgradesHidden(false); else setExpanded(!isExpanded()); });
-$("panelHide").addEventListener("click", () => setUpgradesHidden(true));
+$("panelHide").addEventListener("click", () => setUpgradesHidden(!G.settings.hideUpgrades));
+$("panelHandle").addEventListener("click", () => {
+  if (!isExpanded() && G.settings.hideUpgrades) { G.settings.hideUpgrades = false; save(); }
+  setExpanded(!isExpanded());
+});
 // tapping the arena while the panel is expanded just brings the panel back down
 stage.addEventListener("pointerdown", e => {
   if (!isExpanded()) return;
