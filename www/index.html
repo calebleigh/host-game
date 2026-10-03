@@ -517,8 +517,9 @@ html.rm *, html.rm *::before, html.rm *::after { animation: none !important; tra
   .hud-vir .lives { font-size: 0.95rem; }
 }
 /* settings cog: top left of the arena, before the level name */
+/* sits above popups (card picks, run start and end) so Settings is always one tap away */
 .cog-btn {
-  pointer-events: auto; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; cursor: pointer;
+  position: relative; z-index: 30; pointer-events: auto; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; cursor: pointer;
   color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--lift);
 }
 .cog-btn svg { width: 18px; height: 18px; fill: currentColor; fill-rule: evenodd; }
@@ -651,6 +652,8 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
 .autobtn { right: calc(16px + var(--sar)); bottom: calc(8px + var(--sab)); }
 .panel { padding: var(--sat) var(--sar) var(--sab) 0; }
 .overlay { padding: calc(20px + var(--sat)) calc(20px + var(--sar)) calc(20px + var(--sab)) calc(20px + var(--sal)); }
+/* popups over the run start below the Settings cog, which stays usable on top of them */
+#cardsOv, #shopOv, #overlay { padding-top: calc(58px + var(--sat)); }
 .toast { bottom: calc(44px + var(--sab)); }
 @media (max-width: 760px), (orientation: portrait) and (max-width: 1000px) {
   .legend { bottom: 12px; }
