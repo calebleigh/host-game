@@ -1729,9 +1729,8 @@ function updateCountdowns() {
   }
   if (R.phase === "over" && $("overlay").classList.contains("show")) {
     const counting = auto && !R.shopHold;
-    $("ovAuto").hidden = !auto;
-    $("ovAutoTxt").textContent = counting ? "Next run starts in " + Math.max(0, Math.ceil(RESTART_WAIT - R.autoT)) + "s" : "Stopped. Nothing happens until you choose.";
-    $("ovStay").hidden = !counting;
+    $("ovAuto").hidden = !counting; // the countdown line disappears once stopped
+    if (counting) $("ovAutoTxt").textContent = "Next run starts in " + Math.max(0, Math.ceil(RESTART_WAIT - R.autoT)) + "s";
   }
   if ($("shopOv").classList.contains("show")) {
     $("shopGo").textContent = shopFromMenu ? "Back to menu" : "Close"; $("shopNote").textContent = ""; $("shopDna").textContent = fmt(G.dna);
