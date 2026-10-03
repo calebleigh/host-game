@@ -114,6 +114,8 @@ world 1 to 3x by world 10. Change one knob at a time and re-run `tools/sim.py`.
 3. **Slow start with real progression**, but world 1 must be beatable: it's the gentle tutorial world
    (no special hosts, no sturdy hosts, no map curses, evenly spread layout with no stragglers).
    Layout variance and difficulty grow with progress (early worlds evenly spread, clusters and gaps by world 10).
+   `GAP_CAP` in `generateWorld` caps how wide a gap can cut off a group of hosts: 1x base reach in world 1,
+   rising to 2.2x by world 9 (`connectGroups` slides cut-off groups closer). World 10+ is uncapped.
 4. **Every card choice pairs one boon with one curse**, including the opening pick of a run.
 5. **No single upgrade may be mandatory to win** (the virus spreads without Bounce via death spread).
 6. **Card effects must be visible**: any upgrade value a card changes shows in the accent color with a dotted

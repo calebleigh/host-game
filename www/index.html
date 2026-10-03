@@ -1143,6 +1143,47 @@ function spacing() { return Math.sqrt((WORLD_W * WORLD_H) / R.hosts.length) * vi
 function baseRadius() { return Math.max(6, Math.min(24, spacing() * 0.22)); }
 function rangePx() { return spacing() * 0.85 * (1 + 0.12 * R.lv.reach) * M.range; }
 
+// Slides cut-off groups of hosts toward the rest until every host is within `link` of the main group.
+// Each group moves as a whole, so its own shape stays the same. Deterministic (no randomness).
+function connectGroups(pts, link, minD, bw, bh, hole) {
+  const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  const clampP = p => [Math.min(bw - 0.02, Math.max(0.02, p[0])), Math.min(bh - 0.02, Math.max(0.02, p[1]))];
+  for (let iter = 0; iter < 80; iter++) {
+    const par = pts.map((_, i) => i), find = i => par[i] === i ? i : (par[i] = find(par[i]));
+    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) if (dist(pts[i], pts[j]) <= link) par[find(i)] = find(j);
+    const groups = {};
+    pts.forEach((_, i) => (groups[find(i)] = groups[find(i)] || []).push(i));
+    const list = Object.values(groups).sort((a, b) => b.length - a.length);
+    if (list.length < 2) return;
+    const main = list[0];
+    // the cut-off host closest to the main group, and its group
+    let best = null;
+    for (const g of list.slice(1)) for (const i of g) for (const j of main) {
+      const d = dist(pts[i], pts[j]);
+      if (!best || d < best.d) best = { g, i, j, d };
+    }
+    const { g, i, j, d } = best, target = link * 0.85;
+    const dx = (pts[j][0] - pts[i][0]) * (1 - target / d), dy = (pts[j][1] - pts[i][1]) * (1 - target / d);
+    let moved = false;
+    for (const t of [1, 0.97, 0.94, 0.9, 1.04, 1.08]) {
+      const next = g.map(k => clampP([pts[k][0] + dx * t, pts[k][1] + dy * t]));
+      const clash = next.some(q => main.some(m => dist(q, pts[m]) < minD * 0.85) || (hole && Math.hypot(q[0] - hole.x, q[1] - hole.y) <= hole.r));
+      if (!clash && main.some(m => dist(next[g.indexOf(i)], pts[m]) <= link)) { g.forEach((k, n) => pts[k] = next[n]); moved = true; break; }
+    }
+    // no clean slide: move just the nearest host into reach, the rest of its group follows on later passes
+    if (!moved) {
+      const a = Math.atan2(pts[i][1] - pts[j][1], pts[i][0] - pts[j][0]);
+      let spot = null;
+      for (let k = 0; k < 16 && !spot; k++) {
+        const ang = a + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 0.4;
+        const q = clampP([pts[j][0] + Math.cos(ang) * target, pts[j][1] + Math.sin(ang) * target]);
+        const bad = (hole && Math.hypot(q[0] - hole.x, q[1] - hole.y) <= hole.r) || pts.some((p, m) => m !== i && dist(p, q) < minD * 0.85);
+        if (!bad) spot = q;
+      }
+      pts[i] = spot || clampP([pts[j][0] + Math.cos(a) * target, pts[j][1] + Math.sin(a) * target]);
+    }
+  }
+}
 function generateWorld() {
   const w = R.world;
   const rng = mulberry32(R.seed + w * 7919);
@@ -1191,6 +1232,17 @@ function generateWorld() {
         }
       }
     }
+  }
+  // worlds 1 to 9: no group of hosts may be cut off by a gap wider than the virus can be expected to cross.
+  // World 1 allows 1x the base reach (bounces and death spread both cross), growing to 2.2x by world 9.
+  // From world 10 the layout is left alone, so big gaps can happen.
+  // (boss worlds clear the middle for the boss first, so the clearing can't cut a bridge afterwards)
+  const hole = isBossWorld(w) ? { x: 0.5 * bw, y: 0.5 * bh, r: 0.13 * Math.max(bw, bh) } : null;
+  if (hole) for (let i = pts.length - 1; i >= 0; i--) if (Math.hypot(pts[i][0] - hole.x, pts[i][1] - hole.y) <= hole.r) pts.splice(i, 1);
+  const GAP_CAP = [1, 1.1, 1.25, 1.4, 1.55, 1.7, 1.85, 2, 2.2];
+  if (w <= GAP_CAP.length) {
+    const reach = 0.85 * Math.sqrt((bw * bh) / n);
+    connectGroups(pts, reach * GAP_CAP[w - 1], minD, bw, bh, hole);
   }
   const hpBase = worldHp(w);
   R.hosts = pts.map(p => {
