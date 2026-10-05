@@ -56,14 +56,14 @@ In a plain browser the placeholders stay, and update checks are skipped ("Web ve
 2. `python tools/smoke.py` (needs `pip install playwright` and `python -m playwright install chromium`).
    It must print "page errors: none" for phone, short phone and desktop. Look at the screenshots for layout changes.
 3. For balance changes: `python tools/sim.py 2` (simulated hours). Rough current baseline with the bot:
-   first run reaches about world 9, best world around 14 after an hour, world 20 after about 3 hours, world 24 after
-   about 23 hours, world 25 after about 38 hours, first win (Patient Omega) after about 85 hours (	ools/towin.py,
-   continued in chunks). The bot is weaker than a good player, so that's roughly the 2 to 3 day target. Omega is the
-   longest single stretch (about 2 days for the bot). Potent and Rich genome reach about 17 after an hour (their levels cost 40% more each). The longest
-   stretches are the boss worlds 20 (The Doctor) and 25 (Patient Omega). `tools/towin.py` measures this. Worlds slow down gradually
-   (seconds early, minutes near the end of a run). The bot is a weak player, so a human should beat these.
+   first run reaches about world 9, world 20 after about 2.5 hours, world 23 after about 15 hours, world 25 after
+   about 39 hours, first win (Patient Omega) after about 72 hours (`tools/towin.py`, continued in chunks with saved
+   progress). The bot is weaker than a good player, so that's roughly the 2 to 3 day target. Omega is the longest
+   single stretch (about 33 hours for the bot) and very sensitive to `OMEGA_LEARN` and its `hp`. Potent and Rich
+   genome reach about 17 after an hour (their levels cost 40% more each). Worlds slow down gradually (seconds early,
+   hours near the end).
    `python tools/playstyles.py 20` checks fresh runs: anyone who buys upgrades should clear world 1
-   (currently 238 of 240) in about 2.5 to 3.5 minutes; never buying never clears it.
+   (238 of 240 last time) in about 2.5 to 3.5 minutes; never buying never clears it.
 
 Test hooks live on `window.__host` at the bottom of the script (G, R, step, autoTick, catchUp, buyPerm,
 generateWorld, hostPos, rangePx, recomputeMods, startNewRun, setSilent, ...). Keep them; the tools rely on them.
@@ -101,7 +101,7 @@ Phases (`R.phase`): `idle` (no run), `start` (opening card pick), `pick` (place 
   Every 5th world is a boss world with one
   giant host in the middle that must die: Colony Prime (regrows 3x), The Herbalist (giant healer),
   The Quarantine (can't be infected until 40% of hosts are dead), The Doctor (cures nearby infections every 12s),
-  Patient Omega (learns 50% faster). Healer and Doctor ranges use `hostRange()` (fixed by the map), never your Reach. First kills unlock Spare virus, Second look, Hidden genome, two new boons,
+  Patient Omega (learns 25% faster). Healer and Doctor ranges use `hostRange()` (fixed by the map), never your Reach. First kills unlock Spare virus, Second look, Hidden genome, two new boons,
   and victory + Ascension (hosts +25% health, cure 8% sooner, +35% DNA per level, up to 10).
 - Each world: 3 viruses (more via perks and boons). Place one, it spreads; if it dies out you place the next.
   Dead hosts stay dead between viruses. Lose all viruses and the run ends.
