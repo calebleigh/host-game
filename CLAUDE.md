@@ -96,7 +96,9 @@ Phases (`R.phase`): `idle` (no run), `start` (opening card pick), `pick` (place 
 
 ## Game rules as they stand
 
-- 25 worlds in 5 zones (Petri Dish, Village, Town, City, Planet). **Players see them as levels**: every visible text says\n  "level" ("Level 3 of 25", "Continue to level 4"), while the code keeps world (R.world, worldTitle, class="world"). Every 5th world is a boss world with one
+- 25 worlds in 5 zones (Petri Dish, Village, Town, City, Planet). **Players see them as levels**: every visible text says
+  "level" ("Level 3 of 25", "Continue to level 4"), while the code keeps `world` (`R.world`, `worldTitle`, `class="world"`).
+  Every 5th world is a boss world with one
   giant host in the middle that must die: Colony Prime (regrows 3x), The Herbalist (giant healer),
   The Quarantine (can't be infected until 40% of hosts are dead), The Doctor (cures nearby infections every 12s),
   Patient Omega (learns 50% faster). Healer and Doctor ranges use `hostRange()` (fixed by the map), never your Reach. First kills unlock Spare virus, Second look, Hidden genome, two new boons,
@@ -194,7 +196,11 @@ Virulence has `k: 0.02`, Siphon `k: 0.03`. Change one knob at a time and re-run 
   `load()` and `newMeta()`. One-time migrations use flags on G (example: `colorsV2`).
 - `silent` mode (offline catch-up and the simulator) must skip all DOM work and floats.
 - Hidden tabs pause requestAnimationFrame; returning triggers `catchUp()`.
-- The Android WebView reports the camera cutout as a top inset even in immersive mode. MainActivity sets the\n  cutout mode to ALWAYS / SHORT_EDGES so the app draws beside the camera (otherwise the Fold's cover screen in\n  portrait shows a black strip at the top), and the HUD sits just under the cutout (max(14px, 4px + --sat)).
+- The Android WebView reports the camera cutout as a top inset even in immersive mode. `MainActivity` sets the
+  cutout mode to ALWAYS / SHORT_EDGES so the app draws beside the camera (otherwise the Fold's cover screen in
+  portrait shows a black strip at the top). Capacitor's own inset handling is off (`plugins.SystemBars.insetsHandling:
+  "disable"` in capacitor.config.json): on older WebViews it padded the whole page down by the camera cutout. The HUD
+  sits at the top edge and only the centered status text steps down by `--sat` to clear a center camera hole.
 
 ## Open ideas (not started, check with Caleb first)
 
