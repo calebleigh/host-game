@@ -27,6 +27,7 @@ android/                       Capacitor 8 Android project (committed, generated
 .github/workflows/build-apk.yml   builds the APK and publishes release "build-N" with Host.apk
 tools/smoke.py                 headless smoke test, screenshots to tools/shots/ (git-ignored)
 tools/sim.py                   headless balance simulator (fully automated play for N hours)
+tools/playstyles.py            fresh runs with different habits (buying speed, 1s/15s decisions, placement)
 tools/preview.html             Fold 8 closed + open side by side; "Sync" mirrors one run on both
                                (uses the "preview mirror" section of the game, inactive outside the preview)
 ```
@@ -49,9 +50,10 @@ In a plain browser the placeholders stay, and update checks are skipped ("Web ve
 2. `python tools/smoke.py` (needs `pip install playwright` and `python -m playwright install chromium`).
    It must print "page errors: none" for phone, short phone and desktop. Look at the screenshots for layout changes.
 3. For balance changes: `python tools/sim.py 2` (simulated hours). Rough current baseline with the bot:
-   clears world 1 on the first run in about 2.5 minutes, first run reaches about world 8, best world around
-   12 to 14 after an hour and around 20 after 7 hours, first win is a long day of AFK play. The bot is a weak
-   player (cheapest-first purchases), so a human should beat these numbers.
+   first run reaches about world 9, best world around 15 to 17 after an hour, worlds slow down gradually
+   (seconds early, minutes near the end of a run). The bot is a weak player, so a human should beat these.
+   `python tools/playstyles.py 20` checks fresh runs: anyone who buys upgrades should clear world 1
+   (currently 238 of 240) in about 2.5 to 3.5 minutes; never buying never clears it.
 
 Test hooks live on `window.__host` at the bottom of the script (G, R, step, autoTick, catchUp, buyPerm,
 generateWorld, hostPos, rangePx, recomputeMods, startNewRun, setSilent, ...). Keep them; the tools rely on them.
@@ -99,7 +101,9 @@ Phases (`R.phase`): `idle` (no run), `start` (opening card pick), `pick` (place 
   except patient zero (the host you placed on, `h.pz`): it can be worn down to 1 stack but never fights it off.
   The cure timer wipes the current virus when it lands (120s base, shrinking each world).
 - World collapse (`collapse()`): from 60% of a world's hosts dead, rising to full at 90%, the survivors (bosses
-  too) cleanse up to 80% less, stop healing and take up to twice as long to learn the virus. Without it the last
+  too) cleanse up to 80% less, stop healing and take up to twice as long to learn the virus, and the virus's
+  spread range grows up to 2.5x (`spreadRange()`, bounces and death spread) so scattered survivors stay reachable.
+- World 1's cure takes 1.5x as long (180s), so the tutorial world is reliably beatable. Without it the last
   lone hosts were unkillable and runs hit a wall. Tune with `COLLAPSE_FROM` / `COLLAPSE_FULL`.
 - Lifeforce = damage dealt; spent on run upgrades (Potency, Spread, Parasite, Evasion, Mutations).
   Upgrade costs scale up each world. Upgrades go high (most to 30 to 50 levels) with steep prices, so a run

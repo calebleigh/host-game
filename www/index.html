@@ -1163,6 +1163,9 @@ function hostPos(h) {
 function spacing() { return Math.sqrt((WORLD_W * WORLD_H) / R.hosts.length) * view().sc; }
 function baseRadius() { return Math.max(6, Math.min(24, spacing() * 0.22)); }
 function rangePx() { return spacing() * 0.85 * (1 + 0.12 * R.lv.reach) * M.range; }
+// how far the virus spreads (bounces and death spread): grows up to 2.5x as the world collapses, so the last
+// scattered survivors can still be reached instead of each needing its own virus
+function spreadRange() { return rangePx() * (1 + 1.5 * collapse()); }
 
 // Slides cut-off groups of hosts toward the rest until every host is within `link` of the main group.
 // Each group moves as a whole, so its own shape stays the same. Deterministic (no randomness).
@@ -1404,7 +1407,8 @@ function cleanseBase() { return 0.05 * Math.pow(1.25, R.world - 1) * Math.pow(0.
 const adaptTime = () => 12 * (1 + 0.15 * R.lv.shapeshift) * M.adapt / Math.pow(1.08, R.world - 1) * (1 + collapse());
 const regenRate = () => 0.008 * Math.pow(1.1, R.world - 1) * Math.pow(0.85, R.lv.suppress) * M.regen * (1 - collapse());
 function rampMult(t) { const l = R.lv.wither; return l ? 1 + Math.min(0.04 * l * t, l) : 1; }
-const cureTime = () => CURE_BASE * M.cure * (1 + 0.1 * G.p.cure) * Math.pow(0.92, R.asc || 0) / Math.pow(CURE_SHRINK, R.world - 1);
+// world 1 is the tutorial: its cure takes half again as long (180s instead of 120s)
+const cureTime = () => CURE_BASE * (R.world === 1 ? 1.5 : 1) * M.cure * (1 + 0.1 * G.p.cure) * Math.pow(0.92, R.asc || 0) / Math.pow(CURE_SHRINK, R.world - 1);
 const dnaMult = () => 1 + 0.35 * (R.asc || 0);
 const lfMult = () => YIELD * Math.pow(1.2, R.lv.siphon) * permLf() * M.lf;
 const dmgMult = () => 0.5 * Math.pow(1.3, R.lv.virulence) * permDmg() * M.dmg;
@@ -1435,7 +1439,7 @@ function link(a, b) { if (!silent) { links.push({ a, b, t: 0 }); mirrorFx("link"
 function float(h, text, soft) { if (silent || G.settings.floats === false) return; const [x, y] = hostPos(h); floats.push({ x, y, text, t: 0, soft }); mirrorFx("float", R.hosts.indexOf(h), text, soft); }
 function spreadFrom(src) {
   if (Math.random() > bounceChance(R.lv.bounce)) return;
-  const range = rangePx() * (src.carrier ? 1.6 : 1);
+  const range = spreadRange() * (src.carrier ? 1.6 : 1);
   const extra = Math.random() < Math.min(0.85, 0.08 * R.lv.split + M.split) ? 1 : 0;
   const targets = nearby(src, range, canInfect).slice(0, 1 + extra);
   const carry = R.mu.chain ? Math.floor(src.stacks * (0.25 + 0.15 * R.mu.chain)) : 1;
@@ -1452,7 +1456,7 @@ function kill(h) {
   R.dna += d; // banked when the run ends
   gain(h, h.max * (0.1 + 0.15 * R.lv.harvest) * M.harvest * lfMult());
   float(h, "+" + fmt(h.earned));
-  const range = rangePx();
+  const range = spreadRange();
   // sentinels wake up when a neighbor dies (the Quarantine boss has its own rule)
   for (const s of nearby(h, range, o => o.sentinel && !o.dead && o.boss === undefined)) s.sentinel = false;
   if (h.boss !== undefined) {
@@ -1482,7 +1486,7 @@ function step(dt) {
   if (R.phase !== "run") return;
   if (!silent && R.collapseWorld !== R.world && collapse() > 0) {
     R.collapseWorld = R.world;
-    toast("Most hosts are dead, so the survivors are collapsing: they fight back and heal less and less.", 5000);
+    toast("Most hosts are dead, so the survivors are collapsing: they fight back less and your virus reaches farther.", 5000);
   }
   const cap = stackCap(), ti = tickInt(), si = stackInt(), rg = regenRate();
   const cb = cleanseBase(), ad = adaptTime(), dm = dmgMult();
@@ -2138,7 +2142,7 @@ function draw() {
 
   if (hover && !hover.dead) {
     const [x, y] = hostPos(hover);
-    const rr = rangePx() * (hover.carrier && !hover.healer ? 1.6 : 1);
+    const rr = (hover.healer ? rangePx() : spreadRange()) * (hover.carrier && !hover.healer ? 1.6 : 1);
     ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2);
     ctx.setLineDash([4, 6]); ctx.strokeStyle = hover.healer ? C.heal : C.stain; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.2; ctx.stroke();
     ctx.setLineDash([]); ctx.globalAlpha = 1;
@@ -2589,7 +2593,7 @@ const GUIDE = [
   { scene: "death", title: "Death spread",
     text: "Every time a host dies, the virus spreads to its 2 nearest healthy neighbors for free. Contagion adds more. This means a damage-heavy virus can spread without ever jumping." },
   { scene: "immune", title: "The immune system",
-    text: "Infected hosts fight back by <b>removing stacks</b> (a teal flash), faster the longer they're infected and the more hosts you've killed. If a host removes every stack, it <b>fought it off</b>: a teal ring and shield mark it, and it can't catch that virus again. The host you place a virus on can't fight it off, so every virus gets at least one kill. Stealth, Shapeshift and Suppress weaken the immune system. Once most hosts in a world are dead, the survivors <b>collapse</b>: from 60% dead they fight back and heal less and less, and by 90% they barely resist." },
+    text: "Infected hosts fight back by <b>removing stacks</b> (a teal flash), faster the longer they're infected and the more hosts you've killed. If a host removes every stack, it <b>fought it off</b>: a teal ring and shield mark it, and it can't catch that virus again. The host you place a virus on can't fight it off, so every virus gets at least one kill. Stealth, Shapeshift and Suppress weaken the immune system. Once most hosts in a world are dead, the survivors <b>collapse</b>: from 60% dead they fight back and heal less and less while your virus reaches farther (up to 2.5 times), and by 90% they barely resist." },
   { scene: "cure", title: "The cure and your viruses",
     text: "Each world races to a cure. When the timer runs out, your current virus is wiped out. You get 3 viruses per world, and dead hosts stay dead between them, so each new virus picks up where the last one stopped. Lose them all and the run ends. When a virus dies, a message tells you why." },
   { scene: "special", title: "Special hosts",
@@ -3050,7 +3054,7 @@ addEventListener("message", e => {
   if (d.input) { const el = mirrorFind(d.input); if (el) { el.value = d.value; el.dispatchEvent(new Event(d.type, { bubbles: true })); } }
   if (d.key) document.dispatchEvent(new KeyboardEvent("keydown", { key: d.key, bubbles: true }));
 });
-window.__host = { get G() { return G; }, get R() { return R; }, get M() { return M; }, showCards, buy, runCost, generateWorld, UP, startNewRun, recomputeMods, hostPos, rangePx, renderPanel: () => renderPanel(), step, autoTick, catchUp, buyPerm, PERM, AUTO, upCost,
+window.__host = { get G() { return G; }, get R() { return R; }, get M() { return M; }, showCards, buy, runCost, place, generateWorld, UP, startNewRun, recomputeMods, hostPos, rangePx, renderPanel: () => renderPanel(), step, autoTick, catchUp, buyPerm, PERM, AUTO, upCost,
   setSilent: v => { silent = v; } };
 requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
 })();
