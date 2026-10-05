@@ -911,10 +911,10 @@ const TYPES = {
 const SHED_STACKS = 3;
 const YIELD = 0.3;
 const BASE_LIVES = 3;
-// Host health per world: x2.6 per world up to world 10, then x2.0 per world, so the late game slows down steadily
+// Host health per world: x2.6 per world up to world 10, then x2.05 per world, so the late game slows down steadily
 // instead of becoming unwinnable (target: a first win after about 2 to 3 days of good play). Upgrade prices follow the
 // same scale. The immune system and the cure also scale more gently after world 10 (see cleanseBase and friends).
-const HP_GROWTH = 2.6, HP_GROWTH_LATE = 2.0, LATE_FROM = 10;
+const HP_GROWTH = 2.6, HP_GROWTH_LATE = 2.05, LATE_FROM = 10;
 // grows by `early` per world up to LATE_FROM, then by `late` per world
 const lateGrowth = (w, early, late) => Math.pow(early, Math.min(w, LATE_FROM) - 1) * Math.pow(late, Math.max(0, w - LATE_FROM));
 const worldScale = w => lateGrowth(w, HP_GROWTH, HP_GROWTH_LATE);
