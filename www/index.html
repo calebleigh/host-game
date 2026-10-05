@@ -569,11 +569,11 @@ html.rm *, html.rm *::before, html.rm *::after { animation: none !important; tra
 button.chip { font: inherit; font-size: 0.85rem; background: var(--slide); cursor: help; }
 button.chip:hover { filter: brightness(0.97); border-color: currentColor; }
 button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2px; }
-/* evenly spaced path: every world the same gap apart; boss worlds (every 5th) just bigger */
+/* evenly spaced path: every level the same gap apart; boss levels (every 5th) just bigger */
 .ladder { gap: clamp(3px, 1vw, 5px); padding: 3px 4px; }
 .ladder .zone { display: contents; }
 .ladder .pip.boss { margin: 0 calc(clamp(6px, 2.2vw, 9px) * 0.21); }
-/* world numbers float over the path: the current world and every boss world */
+/* level numbers float over the path: the current level and every boss level */
 .ladder { padding-top: 15px; }
 .ladder .step { position: relative; display: inline-flex; align-items: center; }
 .ladder .step[data-n]::before {
@@ -677,7 +677,7 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
     <div class="hud">
       <div class="hud-top">
         <button class="cog-btn" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg></button>
-        <h1 class="world" id="worldName" tabindex="0">World 1</h1>
+        <h1 class="world" id="worldName" tabindex="0">Level 1</h1>
         <div class="hud-next" id="hudNext"></div>
         <div class="hud-right" id="hudRight">
           <div class="hud-vir"><span class="hud-label">Viruses</span> <b class="lives" id="lives"></b></div>
@@ -704,7 +704,7 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
     </div>
     <div class="overlay" id="cardsOv">
       <div class="pick-wrap">
-        <h2 id="cardsTitle">World fallen</h2>
+        <h2 id="cardsTitle">Level fallen</h2>
         <p id="cardsText">Pick one boon and one curse. Both last for the rest of this run.</p>
         <div class="pick-label">Boons</div>
         <div class="pick-row" id="boonRow"></div>
@@ -995,7 +995,7 @@ const cardPct = v => Math.round(Math.abs(v - 1) * 100) + "%";
 const BOONS = {
   virulent:  { name: "Virulent strain", w: 3, v: [1.15, 1.45, 2], desc: v => "+" + cardPct(v) + " damage", apply: (m, v) => { m.dmg *= v; } },
   richblood: { name: "Rich blood", w: 3, v: [1.15, 1.45, 2], desc: v => "+" + cardPct(v) + " lifeforce", apply: (m, v) => { m.lf *= v; } },
-  spare:     { name: "Spare strain", w: 1, v: [0, 1, 2], desc: v => v ? "+" + v + " virus" + (v > 1 ? "es" : "") + " every world" : "+1 virus on boss worlds",
+  spare:     { name: "Spare strain", w: 1, v: [0, 1, 2], desc: v => v ? "+" + v + " virus" + (v > 1 ? "es" : "") + " every level" : "+1 virus on boss levels",
     apply: (m, v) => { if (v) m.lives += v; else m.bossLives += 1; } },
   longreach: { name: "Long reach", w: 2, v: [1.1, 1.3, 1.6], desc: v => "Bounces reach " + cardPct(v) + " farther", apply: (m, v) => { m.range *= v; } },
   twin:      { name: "Twin jump", w: 2, v: [0.1, 0.3, 0.6], desc: v => "+" + Math.round(v * 100) + "% chance a bounce hits two hosts", apply: (m, v) => { m.split += v; } },
@@ -1047,9 +1047,9 @@ const PERM = {
   yield:    { name: "Rich genome", text: "Lifeforce on every run. Upgrades with a level cap cost the same amount more, so this mostly speeds up Virulence, Siphon and mutations", base: 5, g: 1.4, max: 999, eff: l => "×" + fmt(Math.pow(1.2, l)) },
   headstart:{ name: "Head start", text: "Lifeforce you start each run with", base: 10, g: 1.8, max: 15, eff: l => fmt(headStartLf(l)) },
   incubate: { name: "Incubation", text: "Extra stacks on each virus you place", base: 15, g: 2.2, max: 4, eff: l => "+" + l },
-  cure:     { needsBoss: 2, name: "Hidden genome", text: "More time before each world's cure lands", base: 12, g: 1.9, max: 10, eff: l => "+" + (10 * l) + "%" },
-  lives:    { needsBoss: 0, name: "Spare virus", text: "Extra viruses every world", base: 60, g: 5, max: 2, eff: l => "+" + l },
-  reroll:   { needsBoss: 1, name: "Second look", text: "Card rerolls every world", base: 20, g: 3, max: 3, eff: l => l + " reroll" + (l === 1 ? "" : "s") }
+  cure:     { needsBoss: 2, name: "Hidden genome", text: "More time before each level's cure lands", base: 12, g: 1.9, max: 10, eff: l => "+" + (10 * l) + "%" },
+  lives:    { needsBoss: 0, name: "Spare virus", text: "Extra viruses every level", base: 60, g: 5, max: 2, eff: l => "+" + l },
+  reroll:   { needsBoss: 1, name: "Second look", text: "Card rerolls every level", base: 20, g: 3, max: 3, eff: l => l + " reroll" + (l === 1 ? "" : "s") }
 };
 const AUTO = {
   autoBuy:  { name: "Auto-evolve", text: "Buys run upgrades for you as lifeforce comes in.", cost: 15, needs: 2, toggle: true,
@@ -1333,7 +1333,7 @@ const HOST_INFO = {
   common:   ["Common", "Average health and payout. Most of every map is made of these."],
   sturdy:   ["Sturdy", "About 2.6 times the health, so it takes a while to kill, but it pays 20% more lifeforce per hit."],
   carrier:  ["Carrier", "A trait any size of host can have, shown by the dotted ring. Once infected, its jumps reach 60% farther, bridging gaps between clusters. It has 20% less health and pays a little less."],
-  vacc:     ["Vaccinated", "Can't be infected at all, and doesn't count toward clearing the world. Your virus has to route around it."],
+  vacc:     ["Vaccinated", "Can't be infected at all, and doesn't count toward clearing the level. Your virus has to route around it."],
   healer:   ["Healer", "Every 4 seconds, removes a stack from each infected host in its range and heals them a little. Infecting the healer stops it."],
   immune:   ["Fought off", "Teal ring and shield: this host's immune system beat your current virus, so it can't catch it again. Placing a new virus resets this."],
   sentinel: ["Sentinel", "Can't be infected until a neighbor within range dies. Kill something next to it first."]
@@ -1345,7 +1345,7 @@ function buildLegend() {
   if (R.hosts.some(h => h.sentinel && h.boss === undefined)) items.push("sentinel");
   items.push("immune");
   const boss = R.hosts.find(h => h.boss !== undefined);
-  if (boss) { HOST_INFO.boss = [ZONES[boss.boss].boss, "Boss. " + ZONES[boss.boss].bossText + " It must die to clear the world."]; items.push("boss"); }
+  if (boss) { HOST_INFO.boss = [ZONES[boss.boss].boss, "Boss. " + ZONES[boss.boss].bossText + " It must die to clear the level."]; items.push("boss"); }
   const el = $("legend"); el.innerHTML = "";
   for (const k of items) {
     const b = document.createElement("button");
@@ -1386,8 +1386,8 @@ function showTip(b) {
 function worldTipHtml() {
   const z = zoneOf(R.world), toBoss = ZONE_SIZE * (z + 1) - R.world;
   return "<b>Zone " + (z + 1) + " of " + ZONES.length + ": " + ZONES[z].name + "</b>" +
-    (toBoss === 0 ? "This is the boss world. " + ZONES[z].bossText : "Boss in " + toBoss + " world" + (toBoss > 1 ? "s" : "") + ": " + ZONES[z].boss + ".") +
-    " World " + R.world + " of " + FINAL_WORLD + ".";
+    (toBoss === 0 ? "This is the boss level. " + ZONES[z].bossText : "Boss in " + toBoss + " level" + (toBoss > 1 ? "s" : "") + ": " + ZONES[z].boss + ".") +
+    " Level " + R.world + " of " + FINAL_WORLD + ".";
 }
 function showWorldTip() {
   const tip = $("legendTip"), el = $("worldName");
@@ -1605,7 +1605,7 @@ function virusLost() {
   if (R.lives <= 0) { runOver(); return; }
   R.phase = "pick"; R.autoT = 0;
   if (!R.hosts.some(canPlace)) R.hosts.forEach(h => { if (!h.dead) h.sentinel = false; });
-  if (!silent) toast(lostReason() + " " + R.lives + " virus" + (R.lives === 1 ? "" : "es") + " left for this world.", 6000);
+  if (!silent) toast(lostReason() + " " + R.lives + " virus" + (R.lives === 1 ? "" : "es") + " left for this level.", 6000);
 }
 function worldCleared() {
   const d = 3 * Math.pow(DNA_GROWTH, R.world - 1) * dnaMult();
@@ -1808,7 +1808,7 @@ function showRunOver() {
   $("ovTitle").textContent = R.victory ? "The planet has fallen" : newBest ? "Run over, new best!" : "Run over";
   $("ovText").innerHTML =
     (R.victory ? '<span class="stat"><b>Patient Omega is dead.</b> You won' + (R.asc ? " on Ascension " + R.asc : "") + ". Ascension " + G.ascMax + " is now open from the main menu.</span>"
-      : '<span class="stat"><b>World ' + R.world + '</b> reached' + (newBest ? " (best is now " + G.best + ")" : ", best is " + G.best) + "</span>") +
+      : '<span class="stat"><b>Level ' + R.world + '</b> reached' + (newBest ? " (best is now " + G.best + ")" : ", best is " + G.best) + "</span>") +
     '<span class="stat"><b>' + R.kills + "</b> hosts killed in " + fmtTime(R.elapsed) + "</span>" +
     '<span class="stat"><b>' + fmt(R.dna) + " DNA</b> earned, " + fmt(G.dna) + " to spend</span>" +
     '<span class="stat small">Boons: ' + counts(R.boons, BOONS) + "</span>" +
@@ -1855,7 +1855,7 @@ function showCards() {
   const go = $("cardsGo");
   const ready = !!(R.pickB && R.pickC);
   go.disabled = !ready;
-  go.textContent = start ? "Start world 1" : "Continue to world " + (R.world + 1);
+  go.textContent = start ? "Start level 1" : "Continue to level " + (R.world + 1);
   updateCountdowns();
   const rb = $("rerollBtn");
   rb.style.visibility = G.p.reroll ? "visible" : "hidden";
@@ -1986,15 +1986,15 @@ document.addEventListener("focusin", e => { if (e.target.dataset && e.target.dat
 document.addEventListener("focusout", e => { if (e.target.dataset && e.target.dataset.tip) hideFloatTip(); });
 document.addEventListener("click", e => { const c = e.target.closest && e.target.closest("[data-tip]"); if (c) showFloatTip(c); else hideFloatTip(); });
 // the Run tab: everything about this run, including every boon and curse with its level
-const runSummary = () => "Run " + G.runs + ", world " + R.world + " of " + FINAL_WORLD + (R.asc ? " on Ascension " + R.asc : "") + ". " +
-  R.kills + " kills. " + fmt(R.dna) + " DNA waiting, paid out when the run ends. Best world ever: " + G.best + ".";
+const runSummary = () => "Run " + G.runs + ", level " + R.world + " of " + FINAL_WORLD + (R.asc ? " on Ascension " + R.asc : "") + ". " +
+  R.kills + " kills. " + fmt(R.dna) + " DNA waiting, paid out when the run ends. Best level ever: " + G.best + ".";
 function renderRun(el) {
   const n = document.createElement("p"); n.className = "section-note"; n.id = "runNote"; n.textContent = runSummary();
   el.appendChild(n);
   for (const kind of ["boon", "curse"]) {
     const t = document.createElement("div"); t.className = "section-title"; t.textContent = kind === "boon" ? "Boons" : "Curses"; el.appendChild(t);
     const keys = [...new Set(kind === "boon" ? R.boons : R.curses)];
-    if (!keys.length) { const e = document.createElement("p"); e.className = "section-note"; e.textContent = "None yet. You pick one of each before the run and after every world you clear."; el.appendChild(e); }
+    if (!keys.length) { const e = document.createElement("p"); e.className = "section-note"; e.textContent = "None yet. You pick one of each before the run and after every level you clear."; el.appendChild(e); }
     for (const k of keys) {
       const d = cardDef(kind, k), l = cardLevel(kind, k), row = document.createElement("div");
       row.className = "runcard " + kind;
@@ -2007,7 +2007,7 @@ function renderRun(el) {
 }
 function renderEvolve(el) {
   const n = document.createElement("p"); n.className = "section-note";
-  n.textContent = "DNA is permanent. You collect it during a run from kills, cleared worlds and bosses, and it's paid out when the run ends.";
+  n.textContent = "DNA is permanent. You collect it during a run from kills, cleared levels and bosses, and it's paid out when the run ends.";
   el.appendChild(n);
   for (const k in PERM) {
     const d = PERM[k], l = G.p[k], maxed = l >= d.max;
@@ -2027,7 +2027,7 @@ function renderEvolve(el) {
     const d = AUTO[k], a = G.auto[k];
     const locked = G.best < d.needs;
     if (!a.owned) {
-      el.appendChild(makeRow({ name: d.name, text: locked ? "Reach world " + d.needs + " to unlock. " + d.text : d.text, locked,
+      el.appendChild(makeRow({ name: d.name, text: locked ? "Reach level " + d.needs + " to unlock. " + d.text : d.text, locked,
         btnText: locked ? "Locked" : d.cost + " DNA", disabled: locked, data: locked ? null : { kind: "auto", key: k },
         onClick: () => { if (G.dna < d.cost || locked) return; G.dna -= d.cost; a.owned = true; a.on = true; renderPanel(); updateHud(); save(); } }));
       continue;
@@ -2325,7 +2325,7 @@ function catchUp(secs) {
     const parts = ["Away for " + fmtTime(secs) + "."];
     parts.push("Earned " + fmt(G.dna - before.dna) + " DNA.");
     if (G.runs > before.runs) parts.push(G.runs - before.runs + " new run" + (G.runs - before.runs > 1 ? "s" : "") + ".");
-    if (G.best > before.best) parts.push("New best: world " + G.best + ".");
+    if (G.best > before.best) parts.push("New best: level " + G.best + ".");
     awayNote = parts.join(" ");
     if (menuOpen) showMenu(); else toast(awayNote);
   }
@@ -2588,7 +2588,7 @@ const SCENES = {
     miniLabel(c, "Cure in " + Math.ceil((1 - k) * 120) + " days", w / 2, y - 8, C.ink, 700);
     const lives = 3 - (tt > P - 0.6 ? 1 : 0);
     for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(w / 2 - 18 + i * 18, y + 34, 6, 0, Math.PI * 2); c.fillStyle = i < lives ? C.bruise : C.line; c.fill(); }
-    miniLabel(c, "viruses left this world", w / 2, y + 58);
+    miniLabel(c, "viruses left this level", w / 2, y + 58);
   },
   special(c, w, h, t) {
     const kinds = [["healer", "Healer", { healer: true }], ["vacc", "Vaccinated", { vacc: true }], ["sentinel", "Sentinel", { sentinel: true }], ["boss", "Boss", { boss: true }]];
@@ -2603,7 +2603,7 @@ const SCENES = {
 
 const GUIDE = [
   { scene: "ladder", title: "The goal",
-    text: "Spread through 25 worlds in five zones, from a petri dish to the whole planet. The path at the top of the arena shows where you are. Every fifth world (the bigger diamonds) is a boss. Kill Patient Omega on world 25 and you win." },
+    text: "Spread through 25 levels in five zones, from a petri dish to the whole planet. The path at the top of the arena shows where you are. Every fifth level (the bigger diamonds) is a boss. Kill Patient Omega on level 25 and you win." },
   { scene: "hosts", title: "Hosts",
     text: "Every circle is a host. <b>Frail</b> hosts die fast but pay little. <b>Common</b> hosts are average. <b>Sturdy</b> hosts (thick outline) take much longer to kill but pay more. A dotted ring means a <b>carrier</b>, which any size can be." },
   { scene: "infect", title: "Infecting a host",
@@ -2615,15 +2615,15 @@ const GUIDE = [
   { scene: "death", title: "Death spread",
     text: "Every time a host dies, the virus spreads to its 2 nearest healthy neighbors for free. Contagion adds more. This means a damage-heavy virus can spread without ever jumping." },
   { scene: "immune", title: "The immune system",
-    text: "Infected hosts fight back by <b>removing stacks</b> (a teal flash), faster the longer they're infected and the more hosts you've killed. If a host removes every stack, it <b>fought it off</b>: a teal ring and shield mark it, and it can't catch that virus again. The host you place a virus on can't fight it off, so every virus gets at least one kill. Stealth, Shapeshift and Suppress weaken the immune system. Once most hosts in a world are dead, the survivors <b>collapse</b>: from 60% dead they fight back and heal less and less while your virus reaches farther (up to 2.5 times), and by 90% they barely resist." },
+    text: "Infected hosts fight back by <b>removing stacks</b> (a teal flash), faster the longer they're infected and the more hosts you've killed. If a host removes every stack, it <b>fought it off</b>: a teal ring and shield mark it, and it can't catch that virus again. The host you place a virus on can't fight it off, so every virus gets at least one kill. Stealth, Shapeshift and Suppress weaken the immune system. Once most hosts in a level are dead, the survivors <b>collapse</b>: from 60% dead they fight back and heal less and less while your virus reaches farther (up to 2.5 times), and by 90% they barely resist." },
   { scene: "cure", title: "The cure and your viruses",
-    text: "Each world races to a cure. When the timer runs out, your current virus is wiped out. You get 3 viruses per world, and dead hosts stay dead between them, so each new virus picks up where the last one stopped. Lose them all and the run ends. When a virus dies, a message tells you why." },
+    text: "Each level races to a cure. When the timer runs out, your current virus is wiped out. You get 3 viruses per level, and dead hosts stay dead between them, so each new virus picks up where the last one stopped. Lose them all and the run ends. When a virus dies, a message tells you why." },
   { scene: "special", title: "Special hosts",
-    text: "Curses add special hosts from world 2 on. <b>Healers</b> remove stacks from infected neighbors. <b>Vaccinated</b> hosts can't be infected and don't need to die. <b>Sentinels</b> can't be infected until a neighbor dies. <b>Bosses</b> sit in the middle of every fifth world and must die to clear it." },
+    text: "Curses add special hosts from level 2 on. <b>Healers</b> remove stacks from infected neighbors. <b>Vaccinated</b> hosts can't be infected and don't need to die. <b>Sentinels</b> can't be infected until a neighbor dies. <b>Bosses</b> sit in the middle of every fifth level and must die to clear it." },
   { html: '<div class="g-cards"><div class="pcard boon"><b>Boon</b><span>Helps you for the rest of the run</span></div><div class="pcard curse"><b>Curse</b><span>Makes the run harder</span></div></div>', title: "Cards",
-    text: "Before a run and after every world you clear, you pick one boon and one curse. Both last the whole run. Values a card changes show in the accent color in your upgrades; hover them to see which card did it. The Run tab lists every card you have." },
+    text: "Before a run and after every level you clear, you pick one boon and one curse. Both last the whole run. Values a card changes show in the accent color in your upgrades; hover them to see which card did it. The Run tab lists every card you have." },
   { title: "Lifeforce, DNA and Evolve",
-    text: "<b>Lifeforce</b> buys upgrades for this run only. <b>DNA</b> is permanent: you collect it from kills, cleared worlds and bosses, and it's paid out when the run ends. Spend it in <b>Evolve</b> on lasting upgrades and automation." },
+    text: "<b>Lifeforce</b> buys upgrades for this run only. <b>DNA</b> is permanent: you collect it from kills, cleared levels and bosses, and it's paid out when the run ends. Spend it in <b>Evolve</b> on lasting upgrades and automation." },
   { html: '<div class="g-auto"><span class="autobtn inline" aria-pressed="true"><span class="knob"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1 L11 6 L2 11 Z"/></svg></span></span></div>', title: "Leaving it running",
     text: "With Auto on, anything you don't decide in time (placing a virus, picking cards, starting the next run) is decided for you, and the game keeps playing while you're away. The Auto switch is in the arena's corner and next to Continue on the card screen: colored with the knob on the right means on, gray with the knob on the left means off." }
 ];
@@ -2672,7 +2672,7 @@ function codexEntries() {
   for (const k of Object.keys(HOST_INFO).filter(k => k !== "boss" && k !== "immune"))
     add("Hosts", k, !!G.seen.hosts[k], HOST_INFO[k][0], HOST_INFO[k][1], hostDraw[k]);
   ZONES.forEach((z, i) => add("Bosses", i, !!G.seen.bosses[i], z.boss,
-    "World " + (i + 1) * ZONE_SIZE + ", end of " + z.name + ". " + z.bossText + (G.bosses[i] ? " Defeated. " + z.reward + "." : " Reward: " + z.reward + "."),
+    "Level " + (i + 1) * ZONE_SIZE + ", end of " + z.name + ". " + z.bossText + (G.bosses[i] ? " Defeated. " + z.reward + "." : " Reward: " + z.reward + "."),
     { boss: true, healer: i === 1, sentinel: i === 2 }));
   for (const k in BOONS) add("Boons", k, !!G.seen.boons[k], BOONS[k].name, cardLevelsText("boon", k));
   for (const k in CURSES) add("Curses", k, !!G.seen.curses[k], CURSES[k].name, cardLevelsText("curse", k));
@@ -2769,9 +2769,9 @@ function idleRun() {
 }
 function menuStatusHtml() {
   let h = runActive()
-    ? "<b>Run " + G.runs + " is active.</b> " + worldTitle(R.world) + ", world " + R.world + " of " + FINAL_WORLD + ", " +
+    ? "<b>Run " + G.runs + " is active.</b> " + worldTitle(R.world) + ", level " + R.world + " of " + FINAL_WORLD + ", " +
       Math.max(0, R.lives) + " virus" + (R.lives === 1 ? "" : "es") + " left. Auto is " + (G.settings.autoChoose ? "on, so it keeps playing while you're here." : "off.")
-    : G.runs ? "<b>No run active.</b> Your last run reached world " + R.world + "." : "<b>No run yet.</b> Start one below.";
+    : G.runs ? "<b>No run active.</b> Your last run reached level " + R.world + "." : "<b>No run yet.</b> Start one below.";
   if (awayNote) h += '<span class="away">' + awayNote + "</span>";
   return h;
 }
@@ -2799,7 +2799,7 @@ function showMenu() {
     for (let a = 0; a <= G.ascMax; a++) { const o = document.createElement("option"); o.value = a; o.textContent = a ? "Ascension " + a : "Normal"; if (a === G.asc) o.selected = true; sel.appendChild(o); }
   } else asc.style.display = "none";
   const bosses = Object.keys(G.bosses).length;
-  $("menuStats").innerHTML = "Best world <b>" + G.best + "</b> of " + FINAL_WORLD + (G.wins ? ", won <b>" + G.wins + "×</b>" : "") + "<br>" +
+  $("menuStats").innerHTML = "Best level <b>" + G.best + "</b> of " + FINAL_WORLD + (G.wins ? ", won <b>" + G.wins + "×</b>" : "") + "<br>" +
     "Bosses <b>" + bosses + "</b> of " + ZONES.length + "<br>" + "<b>" + G.runs + "</b> runs, <b>" + fmt(G.dnaTotal) + "</b> DNA earned";
   $("menu").classList.add("show");
   startMenuBg();

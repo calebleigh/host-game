@@ -95,7 +95,7 @@ Phases (`R.phase`): `idle` (no run), `start` (opening card pick), `pick` (place 
 
 ## Game rules as they stand
 
-- 25 worlds in 5 zones (Petri Dish, Village, Town, City, Planet). Every 5th world is a boss world with one
+- 25 worlds in 5 zones (Petri Dish, Village, Town, City, Planet). **Players see them as levels**: every visible text says\n  "level" ("Level 3 of 25", "Continue to level 4"), while the code keeps world (R.world, worldTitle, class="world"). Every 5th world is a boss world with one
   giant host in the middle that must die: Colony Prime (regrows 3x), The Herbalist (giant healer),
   The Quarantine (can't be infected until 40% of hosts are dead), The Doctor (cures nearby infections every 8s),
   Patient Omega (learns twice as fast). First kills unlock Spare virus, Second look, Hidden genome, two new boons,
