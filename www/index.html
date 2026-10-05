@@ -925,37 +925,37 @@ const TREES = [
 const UP = {
   virulence: { tree: "potency", name: "Virulence", base: 20, g: 1.55, k: 0.02, max: 999,
     mod: "dmg", eff: (l, m) => "×" + fmt(Math.pow(1.3, l) * m.dmg), text: "Damage per stack" },
-  replication: { tree: "potency", name: "Replication", base: 30, g: 1.7, max: 12,
+  replication: { tree: "potency", name: "Replication", base: 30, g: 1.7, max: 30,
     mod: "stackSlow", eff: (l, m) => "every " + (3 * Math.pow(0.88, l) * m.stackSlow).toFixed(1) + "s", text: "How fast stacks build on an infected host" },
-  stacking: { tree: "potency", name: "Stacking", base: 60, g: 1.9, max: 10,
+  stacking: { tree: "potency", name: "Stacking", base: 60, g: 1.9, max: 40,
     eff: l => (5 + 3 * l) + " stacks", text: "Max stacks per host" },
-  wither: { tree: "potency", name: "Wither", base: 120, g: 1.8, max: 15,
+  wither: { tree: "potency", name: "Wither", base: 120, g: 1.8, max: 40,
     eff: l => l === 0 ? "off" : "+" + (4 * l) + "%/s, up to ×" + (1 + l), text: "Damage grows the longer a host is infected" },
-  tempo: { tree: "potency", name: "Tempo", base: 150, g: 2.0, max: 10,
+  tempo: { tree: "potency", name: "Tempo", base: 150, g: 2.0, max: 25,
     eff: l => (0.5 * Math.pow(0.88, l)).toFixed(2) + "s", text: "Time between damage ticks" },
 
-  bounce: { tree: "spread", name: "Bounce", base: 45, g: 1.75, max: 15,
+  bounce: { tree: "spread", name: "Bounce", base: 45, g: 1.75, max: 30,
     mod: "bounceSpeed", eff: (l, m) => pct(bounceChance(l)) + " chance every " + (8 * Math.pow(0.88, l) / m.bounceSpeed).toFixed(1) + "s",
     text: "Hosts with " + SHED_STACKS + "+ stacks already try to jump to the nearest healthy host. This makes them try harder" },
-  reach: { tree: "spread", name: "Reach", base: 100, g: 1.7, max: 12,
+  reach: { tree: "spread", name: "Reach", base: 100, g: 1.7, max: 30,
     mod: "range", eff: (l, m) => Math.round((1 + 0.12 * l) * m.range * 100) + "% reach", text: "How far a bounce can travel, compared to normal" },
-  split: { tree: "spread", name: "Split", base: 400, g: 1.9, max: 8,
+  split: { tree: "spread", name: "Split", base: 400, g: 1.9, max: 10,
     mod: "split", eff: (l, m) => pct(Math.min(0.85, 0.08 * l + m.split)), text: "Chance a bounce also hits a second host" },
-  contagion: { tree: "spread", name: "Contagion", base: 300, g: 2.1, max: 5,
+  contagion: { tree: "spread", name: "Contagion", base: 300, g: 2.1, max: 15,
     mod: "contagion", eff: (l, m) => (2 + l + m.contagion) + " hosts", text: "When a host dies, this many nearby healthy hosts catch it" },
 
   siphon: { tree: "parasite", name: "Siphon", base: 25, g: 1.6, k: 0.03, max: 999,
     mod: "lf", eff: (l, m) => "×" + fmt(Math.pow(1.2, l) * m.lf), text: "Lifeforce gained per point of damage" },
-  harvest: { tree: "parasite", name: "Harvest", base: 80, g: 1.8, max: 10,
+  harvest: { tree: "parasite", name: "Harvest", base: 80, g: 1.8, max: 40,
     mod: "harvest", eff: (l, m) => "+" + Math.round((10 + 15 * l) * m.harvest) + "% of its health", text: "Bonus lifeforce when a host dies" },
   linger: { tree: "parasite", name: "Linger", base: 300, g: 1.9, max: 6,
     eff: l => l === 0 ? "off" : "−" + (8 * l) + "% dmg, +" + (30 * l) + "% yield", text: "Hosts under 25% health die slower but pay out more" },
 
-  stealth: { tree: "evasion", name: "Stealth", base: 50, g: 1.75, max: 10,
+  stealth: { tree: "evasion", name: "Stealth", base: 50, g: 1.75, max: 50,
     eff: l => "−" + pct(1 - Math.pow(0.88, l)) + " cleansing", text: "Immune system removes stacks less often" },
-  shapeshift: { tree: "evasion", name: "Shapeshift", base: 90, g: 1.8, max: 10,
+  shapeshift: { tree: "evasion", name: "Shapeshift", base: 90, g: 1.8, max: 50,
     mod: "adapt", eff: (l, m) => signPct((1 + 0.15 * l) * m.adapt - 1) + " learning time", text: "How long each host's immune system takes to learn the virus" },
-  suppress: { tree: "evasion", name: "Suppress", base: 60, g: 1.75, max: 10,
+  suppress: { tree: "evasion", name: "Suppress", base: 60, g: 1.75, max: 50,
     mod: "regen", eff: (l, m) => signPct(Math.pow(0.85, l) * m.regen - 1) + " healing", text: "Infected hosts regenerate less health" }
 };
 // upgrades with a level cap get steeply pricier near the top, so maxing one is a late-run goal, not a given
@@ -1498,7 +1498,8 @@ function step(dt) {
         for (const o of nearby(h, rangePx() * (h.healRange || 1), o => o.inf && !o.dead)) {
           o.stacks--; o.hp = Math.min(o.max, o.hp + o.max * 0.05);
           o.flash = now;
-          if (o.stacks <= 0) { o.inf = false; o.resist = 1e9; vs().healed++; float(o, "healed", "immune"); }
+          if (o.stacks <= 0 && o.pz) o.stacks = 1;
+          else if (o.stacks <= 0) { o.inf = false; o.resist = 1e9; vs().healed++; float(o, "healed", "immune"); }
           link(h, o);
         }
       }
@@ -1512,7 +1513,8 @@ function step(dt) {
     if (h.t > 4 && Math.random() < cb * (1 + h.t / (h.boss === 4 ? ad / 2 : ad)) * dt) {
       h.stacks--;
       h.flash = now;
-      if (h.stacks <= 0) { h.inf = false; h.resist = 1e9; h.t = 0; vs().fought++; float(h, "fought off", "immune"); }
+      if (h.stacks <= 0 && h.pz) h.stacks = 1;
+      else if (h.stacks <= 0) { h.inf = false; h.resist = 1e9; h.t = 0; vs().fought++; float(h, "fought off", "immune"); }
     }
     if (h.inf && h.stacks >= SHED_STACKS && h.bAcc >= bcd) { h.bAcc = 0; spreadFrom(h); }
   }
@@ -1544,8 +1546,9 @@ function step(dt) {
 const vs = () => R.vs || (R.vs = { fought: 0, healed: 0, doctor: 0, cured: false });
 function place(h) {
   if (R.phase !== "pick" || !h || h.dead || h.vacc || h.sentinel) return false;
-  for (const o of R.hosts) o.resist = 0; // a fresh strain: old immunity doesn't apply
+  for (const o of R.hosts) { o.resist = 0; o.pz = false; } // a fresh strain: old immunity doesn't apply
   R.lastPz = R.hosts.indexOf(h);
+  h.pz = true; // patient zero can't fight it off, so every virus gets at least one kill
   infect(h, 1 + G.p.incubate);
   R.cure = 0; R.vs = { fought: 0, healed: 0, doctor: 0, cured: false };
   R.phase = "run";
@@ -2576,7 +2579,7 @@ const GUIDE = [
   { scene: "death", title: "Death spread",
     text: "Every time a host dies, the virus spreads to its 2 nearest healthy neighbors for free. Contagion adds more. This means a damage-heavy virus can spread without ever jumping." },
   { scene: "immune", title: "The immune system",
-    text: "Infected hosts fight back by <b>removing stacks</b> (a teal flash), faster the longer they're infected and the more hosts you've killed. If a host removes every stack, it <b>fought it off</b>: a teal ring and shield mark it, and it can't catch that virus again. Stealth, Shapeshift and Suppress weaken the immune system." },
+    text: "Infected hosts fight back by <b>removing stacks</b> (a teal flash), faster the longer they're infected and the more hosts you've killed. If a host removes every stack, it <b>fought it off</b>: a teal ring and shield mark it, and it can't catch that virus again. The host you place a virus on can't fight it off, so every virus gets at least one kill. Stealth, Shapeshift and Suppress weaken the immune system." },
   { scene: "cure", title: "The cure and your viruses",
     text: "Each world races to a cure. When the timer runs out, your current virus is wiped out. You get 3 viruses per world, and dead hosts stay dead between them, so each new virus picks up where the last one stopped. Lose them all and the run ends. When a virus dies, a message tells you why." },
   { scene: "special", title: "Special hosts",

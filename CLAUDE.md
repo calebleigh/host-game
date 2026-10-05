@@ -95,10 +95,12 @@ Phases (`R.phase`): `idle` (no run), `start` (opening card pick), `pick` (place 
   (0.85 x average host spacing, Reach +12%/level); every death infects the 2 nearest healthy hosts for free
   (Contagion adds more). Carriers (a trait any size can have, ~10% of hosts) jump 60% farther.
 - Immune system: removes stacks, faster the longer a host is infected and as the immune alert rises with kills.
-  A host that loses every stack has "fought it off" (teal ring + shield) and can't catch that virus again.
+  A host that loses every stack has "fought it off" (teal ring + shield) and can't catch that virus again,
+  except patient zero (the host you placed on, `h.pz`): it can be worn down to 1 stack but never fights it off.
   The cure timer wipes the current virus when it lands (120s base, shrinking each world).
 - Lifeforce = damage dealt; spent on run upgrades (Potency, Spread, Parasite, Evasion, Mutations).
-  Upgrade costs scale up each world.
+  Upgrade costs scale up each world. Upgrades go high (most to 30 to 50 levels) with steep prices, so a run
+  never buys everything; only Split (10), Linger (6) and Tempo (25) stay low because their effect breaks past that.
 - DNA is collected during a run (kills, cleared worlds, bosses) but **only paid out when the run ends**.
   Spent in Evolve on permanent perks and automation.
 - Cards: at the start of every run and after every cleared world, pick one boon and one curse. Every card has
