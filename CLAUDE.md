@@ -56,9 +56,10 @@ In a plain browser the placeholders stay, and update checks are skipped ("Web ve
 2. `python tools/smoke.py` (needs `pip install playwright` and `python -m playwright install chromium`).
    It must print "page errors: none" for phone, short phone and desktop. Look at the screenshots for layout changes.
 3. For balance changes: `python tools/sim.py 2` (simulated hours). Rough current baseline with the bot:
-   first run reaches about world 9, best world around 14 after an hour, world 20 after about 4 to 5 hours, then each
-   late world takes a little longer than the last (target: a first win after 2 to 3 days of good play; the bot is
-   weaker than a good player). Potent and Rich genome reach about 17 after an hour (their levels cost 40% more each). The longest
+   first run reaches about world 9, best world around 14 after an hour, world 20 after about 3 hours, world 24 after
+   about 23 hours, world 25 after about 38 hours, first win (Patient Omega) after about 85 hours (	ools/towin.py,
+   continued in chunks). The bot is weaker than a good player, so that's roughly the 2 to 3 day target. Omega is the
+   longest single stretch (about 2 days for the bot). Potent and Rich genome reach about 17 after an hour (their levels cost 40% more each). The longest
    stretches are the boss worlds 20 (The Doctor) and 25 (Patient Omega). `tools/towin.py` measures this. Worlds slow down gradually
    (seconds early, minutes near the end of a run). The bot is a weak player, so a human should beat these.
    `python tools/playstyles.py 20` checks fresh runs: anyone who buys upgrades should clear world 1
