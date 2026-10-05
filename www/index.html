@@ -647,8 +647,10 @@ button.chip:focus-visible { outline: 2px solid var(--bruise); outline-offset: 2p
 .cx-body p { margin: 0; color: var(--muted); line-height: 1.45; font-size: 0.9rem; }
 .cx-pic { position: static; inset: auto; width: 80px; height: 80px; border-radius: 8px; border: 1px solid var(--line); flex-shrink: 0; }
 /* ---- edge to edge: backgrounds fill the whole screen, content stays clear of the notch and bars ---- */
-/* the top row sits as high as it can: 14px from the edge, or just under a camera cutout (4px below it) */
-.hud { top: max(14px, calc(4px + var(--sat))); left: calc(16px + var(--sal)); right: calc(16px + var(--sar)); }
+/* the top row sits at the top edge. A phone's camera hole is in the middle of the top edge (the Fold's cover screen in
+   portrait), so only the middle status text steps down below it; the cog, level name and viruses stay at the top. */
+.hud { top: 14px; left: calc(16px + var(--sal)); right: calc(16px + var(--sar)); }
+.hud-next { padding-top: max(0px, calc(var(--sat) - 10px)); }
 .legend { left: calc(16px + var(--sal)); bottom: calc(12px + var(--sab)); }
 .autobtn { right: calc(16px + var(--sar)); bottom: calc(8px + var(--sab)); }
 .panel { padding: var(--sat) var(--sar) var(--sab) 0; }
@@ -1502,6 +1504,7 @@ function kill(h) {
   }
 }
 function damageHost(h, raw) {
+  h.hurt = true; // its health ring stays visible from now on, so healing back to full doesn't make it flicker
   let dmg = raw;
   let y = TYPES[h.type].yield * (h.carrier ? 0.9 : 1) * lfMult();
   if (ulv("linger") && h.hp < h.max * 0.25) { dmg *= Math.max(0.4, 1 - 0.08 * ulv("linger")); y *= 1 + 0.3 * ulv("linger"); }
@@ -2252,7 +2255,7 @@ function draw() {
       ctx.beginPath(); ctx.arc(x, y, r + 3 + 8 * k, 0, Math.PI * 2);
       ctx.strokeStyle = C.heal; ctx.globalAlpha = 1 - k; ctx.lineWidth = 2; ctx.stroke(); ctx.globalAlpha = 1;
     }
-    if (h.hp < h.max) {
+    if (h.hp < h.max || h.hurt) {
       ctx.beginPath(); ctx.arc(x, y, r + (h.carrier ? 8 : 4), -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (h.hp / h.max));
       ctx.strokeStyle = C.hp; ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.stroke(); ctx.lineCap = "butt";
     }
