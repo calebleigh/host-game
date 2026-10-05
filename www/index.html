@@ -960,15 +960,28 @@ const UP = {
 };
 // upgrades with a level cap get steeply pricier near the top, so maxing one is a late-run goal, not a given
 for (const k in UP) if (UP[k].max < 999) { UP[k].capped = true; if (UP[k].k === undefined) UP[k].k = 0.015; }
+// Punchy levels: each level you buy counts as UP_STEP of the small steps written above (the effect formulas read
+// the level through ulv()). Prices and caps are converted so one level costs what UP_STEP small steps did, times
+// UP_WORK on top, so upgrades are stronger but take more work to earn.
+const UP_STEP = 2, UP_WORK = 1.2;
+for (const k in UP) {
+  const d = UP[k], g = d.g;
+  d.base = d.base * (Math.pow(g, UP_STEP) - 1) / (g - 1) * UP_WORK;   // the first UP_STEP small steps, together
+  d.g = Math.pow(g, UP_STEP);
+  if (d.k) d.k = Math.pow(1 + d.k, UP_STEP * UP_STEP) - 1;
+  if (d.max < 999) d.max = Math.ceil(d.max / UP_STEP);
+}
 
+// effect strength of an upgrade: its bought level times UP_STEP
+const ulv = k => R.lv[k] * UP_STEP;
 const MUT = {
-  chain: { name: "Carrier Chain", needs: { bounce: 3, wither: 3 }, base: 1500, g: 2.2, max: 5,
+  chain: { name: "Carrier Chain", needs: { bounce: 2, wither: 2 }, base: 1500, g: 2.2, max: 5,
     eff: l => pct(0.25 + 0.15 * l) + " of stacks", text: "New infections from a bounce carry over stacks from their source" },
-  spores: { name: "Spore Burst", needs: { split: 3, contagion: 2 }, base: 3000, g: 2.3, max: 5,
+  spores: { name: "Spore Burst", needs: { split: 2, contagion: 1 }, base: 3000, g: 2.3, max: 5,
     eff: l => "+" + l + " host" + (l > 1 ? "s" : "") + ", " + (2 * l) + " stacks", text: "Dying hosts burst into extra infections that start strong" },
-  flare: { name: "Flare", needs: { siphon: 3, stealth: 3 }, base: 2000, g: 2.2, max: 5,
+  flare: { name: "Flare", needs: { siphon: 2, stealth: 2 }, base: 2000, g: 2.2, max: 5,
     eff: l => (2 + l) + "s of damage every 10s", text: "The virus goes quiet, then hits all hosts at once" },
-  necrosis: { name: "Necrosis", needs: { virulence: 3, linger: 2 }, base: 2500, g: 2.3, max: 5,
+  necrosis: { name: "Necrosis", needs: { virulence: 2, linger: 1 }, base: 2500, g: 2.3, max: 5,
     eff: l => "+" + l + " stack" + (l > 1 ? "s" : "") + " past cap", text: "Each death feeds stacks to infected hosts nearby" }
 };
 
@@ -1057,7 +1070,7 @@ function newMeta() {
   const p = {}; for (const k in PERM) p[k] = 0;
   const a = {}; for (const k in AUTO) a[k] = { owned: false, on: true };
   return { dna: 0, dnaTotal: 0, best: 1, runs: 0, p, auto: a, settings: Object.assign({}, DEFAULT_SETTINGS), savedAt: Date.now(),
-    bosses: {}, wins: 0, ascMax: 0, asc: 0, colorsV2: true, seen: { hosts: {}, bosses: {}, boons: {}, curses: {}, muts: {} } };
+    bosses: {}, wins: 0, ascMax: 0, asc: 0, colorsV2: true, upStep2: true, seen: { hosts: {}, bosses: {}, boons: {}, curses: {}, muts: {} } };
 }
 function newRun() {
   const lv = {}; for (const k in UP) lv[k] = 0;
@@ -1162,7 +1175,7 @@ function hostPos(h) {
 }
 function spacing() { return Math.sqrt((WORLD_W * WORLD_H) / R.hosts.length) * view().sc; }
 function baseRadius() { return Math.max(6, Math.min(24, spacing() * 0.22)); }
-function rangePx() { return spacing() * 0.85 * (1 + 0.12 * R.lv.reach) * M.range; }
+function rangePx() { return spacing() * 0.85 * (1 + 0.12 * ulv("reach")) * M.range; }
 // how far the virus spreads (bounces and death spread): grows up to 2.5x as the world collapses, so the last
 // scattered survivors can still be reached instead of each needing its own virus
 function spreadRange() { return rangePx() * (1 + 1.5 * collapse()); }
@@ -1388,9 +1401,9 @@ document.addEventListener("pointerdown", e => { if (!e.target.closest || !(e.tar
 // ================= derived stats =================
 const permDmg = () => Math.pow(1.2, G.p.potency);
 const permLf = () => Math.pow(1.2, G.p.yield);
-const stackCap = () => 5 + 3 * R.lv.stacking;
-const stackInt = () => 3 * Math.pow(0.88, R.lv.replication) * M.stackSlow;
-const tickInt = () => 0.5 * Math.pow(0.88, R.lv.tempo);
+const stackCap = () => 5 + 3 * ulv("stacking");
+const stackInt = () => 3 * Math.pow(0.88, ulv("replication")) * M.stackSlow;
+const tickInt = () => 0.5 * Math.pow(0.88, ulv("tempo"));
 function bounceCd(l) { return 8 * Math.pow(0.88, l) / (M ? M.bounceSpeed : 1); }
 function bounceChance(l) { return Math.min(0.75, 0.15 + 0.07 * l); }
 const required = () => R.hosts.filter(h => !h.vacc);
@@ -1403,15 +1416,15 @@ const alertPush = () => 1 + 2 * Math.min(1, (R.world - 1) / 9);
 // up instead of grinding to a halt on a few lone hosts (bosses included).
 const COLLAPSE_FROM = 0.6, COLLAPSE_FULL = 0.9;
 const collapse = () => { const n = required().length; return n ? Math.max(0, Math.min(1, (killedCount() / n - COLLAPSE_FROM) / (COLLAPSE_FULL - COLLAPSE_FROM))) : 0; };
-function cleanseBase() { return 0.05 * Math.pow(1.25, R.world - 1) * Math.pow(0.88, R.lv.stealth) * (1 + alertPush() * alertLevel()) * (1 - 0.8 * collapse()); }
-const adaptTime = () => 12 * (1 + 0.15 * R.lv.shapeshift) * M.adapt / Math.pow(1.08, R.world - 1) * (1 + collapse());
-const regenRate = () => 0.008 * Math.pow(1.1, R.world - 1) * Math.pow(0.85, R.lv.suppress) * M.regen * (1 - collapse());
-function rampMult(t) { const l = R.lv.wither; return l ? 1 + Math.min(0.04 * l * t, l) : 1; }
+function cleanseBase() { return 0.05 * Math.pow(1.25, R.world - 1) * Math.pow(0.88, ulv("stealth")) * (1 + alertPush() * alertLevel()) * (1 - 0.8 * collapse()); }
+const adaptTime = () => 12 * (1 + 0.15 * ulv("shapeshift")) * M.adapt / Math.pow(1.08, R.world - 1) * (1 + collapse());
+const regenRate = () => 0.008 * Math.pow(1.1, R.world - 1) * Math.pow(0.85, ulv("suppress")) * M.regen * (1 - collapse());
+function rampMult(t) { const l = ulv("wither"); return l ? 1 + Math.min(0.04 * l * t, l) : 1; }
 // world 1 is the tutorial: its cure takes half again as long (180s instead of 120s)
 const cureTime = () => CURE_BASE * (R.world === 1 ? 1.5 : 1) * M.cure * (1 + 0.1 * G.p.cure) * Math.pow(0.92, R.asc || 0) / Math.pow(CURE_SHRINK, R.world - 1);
 const dnaMult = () => 1 + 0.35 * (R.asc || 0);
-const lfMult = () => YIELD * Math.pow(1.2, R.lv.siphon) * permLf() * M.lf;
-const dmgMult = () => 0.5 * Math.pow(1.3, R.lv.virulence) * permDmg() * M.dmg;
+const lfMult = () => YIELD * Math.pow(1.2, ulv("siphon")) * permLf() * M.lf;
+const dmgMult = () => 0.5 * Math.pow(1.3, ulv("virulence")) * permDmg() * M.dmg;
 const canInfect = h => !h.dead && !h.inf && !h.vacc && !h.sentinel && h.resist <= 0;
 const canPlace = h => !h.dead && !h.inf && !h.vacc && !h.sentinel;
 
@@ -1438,9 +1451,9 @@ function nearby(src, range, filter) {
 function link(a, b) { if (!silent) { links.push({ a, b, t: 0 }); mirrorFx("link", R.hosts.indexOf(a), R.hosts.indexOf(b)); } }
 function float(h, text, soft) { if (silent || G.settings.floats === false) return; const [x, y] = hostPos(h); floats.push({ x, y, text, t: 0, soft }); mirrorFx("float", R.hosts.indexOf(h), text, soft); }
 function spreadFrom(src) {
-  if (Math.random() > bounceChance(R.lv.bounce)) return;
+  if (Math.random() > bounceChance(ulv("bounce"))) return;
   const range = spreadRange() * (src.carrier ? 1.6 : 1);
-  const extra = Math.random() < Math.min(0.85, 0.08 * R.lv.split + M.split) ? 1 : 0;
+  const extra = Math.random() < Math.min(0.85, 0.08 * ulv("split") + M.split) ? 1 : 0;
   const targets = nearby(src, range, canInfect).slice(0, 1 + extra);
   const carry = R.mu.chain ? Math.floor(src.stacks * (0.25 + 0.15 * R.mu.chain)) : 1;
   for (const t of targets) { infect(t, carry); link(src, t); }
@@ -1454,7 +1467,7 @@ function kill(h) {
   R.kills++;
   const d = 0.25 * Math.pow(DNA_GROWTH, R.world - 1) * dnaMult();
   R.dna += d; // banked when the run ends
-  gain(h, h.max * (0.1 + 0.15 * R.lv.harvest) * M.harvest * lfMult());
+  gain(h, h.max * (0.1 + 0.15 * ulv("harvest")) * M.harvest * lfMult());
   float(h, "+" + fmt(h.earned));
   const range = spreadRange();
   // sentinels wake up when a neighbor dies (the Quarantine boss has its own rule)
@@ -1464,7 +1477,7 @@ function kill(h) {
     R.dna += bd;
     if (!G.bosses[h.boss]) { G.bosses[h.boss] = true; R.newBoss = h.boss; }
   }
-  const n = 2 + R.lv.contagion + M.contagion + R.mu.spores; // every death spreads to at least two neighbors
+  const n = 2 + ulv("contagion") + M.contagion + R.mu.spores; // every death spreads to at least two neighbors
   if (n > 0) {
     for (const t of nearby(h, range * 1.1, canInfect).slice(0, n)) { infect(t, R.mu.spores ? 2 * R.mu.spores : 1); link(h, t); }
   }
@@ -1476,7 +1489,7 @@ function kill(h) {
 function damageHost(h, raw) {
   let dmg = raw;
   let y = TYPES[h.type].yield * (h.carrier ? 0.9 : 1) * lfMult();
-  if (R.lv.linger && h.hp < h.max * 0.25) { dmg *= Math.max(0.4, 1 - 0.08 * R.lv.linger); y *= 1 + 0.3 * R.lv.linger; }
+  if (ulv("linger") && h.hp < h.max * 0.25) { dmg *= Math.max(0.4, 1 - 0.08 * ulv("linger")); y *= 1 + 0.3 * ulv("linger"); }
   const actual = Math.min(dmg, h.hp);
   h.hp -= actual;
   gain(h, actual * y);
@@ -1490,7 +1503,7 @@ function step(dt) {
   }
   const cap = stackCap(), ti = tickInt(), si = stackInt(), rg = regenRate();
   const cb = cleanseBase(), ad = adaptTime(), dm = dmgMult();
-  const bcd = bounceCd(R.lv.bounce);
+  const bcd = bounceCd(ulv("bounce"));
   for (const h of R.hosts) {
     if (h.dead) continue;
     if (h.boss === 2 && h.sentinel && killedCount() >= required().length * 0.4) {
@@ -1918,11 +1931,12 @@ function upRow(key, def, level, isMut) {
   const locked = isMut && !R.found[key];
   const maxed = level >= def.max;
   if (locked) return makeRow({ name: def.name, text: "Needs " + Object.entries(def.needs).map(([u, n]) => UP[u].name + " " + n).join(" and "), btnText: "Locked", disabled: true, locked: true, onClick: () => {} });
-  let effNow = def.eff(level, M), effNext = maxed ? "" : def.eff(level + 1, M);
+  const s = isMut ? 1 : UP_STEP; // run upgrades: one bought level is UP_STEP small steps
+  let effNow = def.eff(level * s, M), effNext = maxed ? "" : def.eff((level + 1) * s, M);
   if (!isMut && def.mod && M[def.mod] !== NEUTRAL[def.mod]) {
     const lines = cardsAffecting(def.mod).map(t => t.replace(/"/g, "&quot;")).join("<br>");
     const esc = t => t.replace(/</g, "&lt;");
-    effNow = '<span class="buffed" tabindex="0" data-tip-title="Changed by your cards" data-tip="Without them: ' + esc(def.eff(level, NEUTRAL)) + "<br><br>" + lines + '">' +
+    effNow = '<span class="buffed" tabindex="0" data-tip-title="Changed by your cards" data-tip="Without them: ' + esc(def.eff(level * s, NEUTRAL)) + "<br><br>" + lines + '">' +
       esc(effNow) + (effNext ? "  →  " + esc(effNext) : "") + "</span>";
     effNext = "";
   }
@@ -2335,6 +2349,8 @@ function load() {
     R = d.R;
     for (const h of R.hosts) if (h.type === "carrier") { h.type = "common"; h.carrier = true; }
     for (const k in UP) if (typeof R.lv[k] !== "number") R.lv[k] = 0;
+    // upgrade levels became twice as strong: a run saved before that keeps about the same strength
+    if (!G.upStep2) { for (const k in UP) R.lv[k] = Math.min(UP[k].max, Math.ceil(R.lv[k] / UP_STEP)); G.upStep2 = true; }
     for (const k in MUT) if (typeof R.mu[k] !== "number") R.mu[k] = 0;
     recomputeMods();
     return true;
@@ -3054,7 +3070,7 @@ addEventListener("message", e => {
   if (d.input) { const el = mirrorFind(d.input); if (el) { el.value = d.value; el.dispatchEvent(new Event(d.type, { bubbles: true })); } }
   if (d.key) document.dispatchEvent(new KeyboardEvent("keydown", { key: d.key, bubbles: true }));
 });
-window.__host = { get G() { return G; }, get R() { return R; }, get M() { return M; }, showCards, buy, runCost, place, generateWorld, UP, startNewRun, recomputeMods, hostPos, rangePx, renderPanel: () => renderPanel(), step, autoTick, catchUp, buyPerm, PERM, AUTO, upCost,
+window.__host = { get G() { return G; }, get R() { return R; }, get M() { return M; }, showCards, buy, runCost, place, snapshot: () => JSON.stringify(R), restore: s => { R = JSON.parse(s); recomputeMods(); }, generateWorld, UP, startNewRun, recomputeMods, hostPos, rangePx, renderPanel: () => renderPanel(), step, autoTick, catchUp, buyPerm, PERM, AUTO, upCost,
   setSilent: v => { silent = v; } };
 requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
 })();

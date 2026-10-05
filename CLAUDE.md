@@ -28,6 +28,7 @@ android/                       Capacitor 8 Android project (committed, generated
 tools/smoke.py                 headless smoke test, screenshots to tools/shots/ (git-ignored)
 tools/sim.py                   headless balance simulator (fully automated play for N hours)
 tools/playstyles.py            fresh runs with different habits (buying speed, 1s/15s decisions, placement)
+tools/setbacks.py              does buying after a lost virus help (same-dice A/B), and how far each DNA level gets
 tools/preview.html             Fold 8 closed + open side by side; "Sync" mirrors one run on both
                                (uses the "preview mirror" section of the game, inactive outside the preview)
 ```
@@ -106,8 +107,9 @@ Phases (`R.phase`): `idle` (no run), `start` (opening card pick), `pick` (place 
 - World 1's cure takes 1.5x as long (180s), so the tutorial world is reliably beatable. Without it the last
   lone hosts were unkillable and runs hit a wall. Tune with `COLLAPSE_FROM` / `COLLAPSE_FULL`.
 - Lifeforce = damage dealt; spent on run upgrades (Potency, Spread, Parasite, Evasion, Mutations).
-  Upgrade costs scale up each world. Upgrades go high (most to 30 to 50 levels) with steep prices, so a run
-  never buys everything; only Split (10), Linger (6) and Tempo (25) stay low because their effect breaks past that.
+  Upgrade costs scale up each world. Levels are punchy: each bought level counts as `UP_STEP` (2) of the small
+  steps written in `UP` (effect formulas read levels through `ulv()`), and prices/caps are converted at load with
+  `UP_WORK` (1.2) extra cost. Caps are about 15 to 25 levels with steep prices, so a run never buys everything.
 - DNA is collected during a run (kills, cleared worlds, bosses) but **only paid out when the run ends**.
   Spent in Evolve on permanent perks and automation.
 - Cards: at the start of every run and after every cleared world, pick one boon and one curse. Every card has
