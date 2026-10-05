@@ -29,6 +29,7 @@ tools/smoke.py                 headless smoke test, screenshots to tools/shots/ 
 tools/sim.py                   headless balance simulator (fully automated play for N hours)
 tools/playstyles.py            fresh runs with different habits (buying speed, 1s/15s decisions, placement)
 tools/setbacks.py              does buying after a lost virus help (same-dice A/B), and how far each DNA level gets
+tools/fastest.py               fastest possible world 1 for a new player (buying strategies x brute-force placement)
 tools/preview.html             Fold 8 closed + open side by side; "Sync" mirrors one run on both
                                (uses the "preview mirror" section of the game, inactive outside the preview)
 ```
@@ -55,7 +56,8 @@ In a plain browser the placeholders stay, and update checks are skipped ("Web ve
 2. `python tools/smoke.py` (needs `pip install playwright` and `python -m playwright install chromium`).
    It must print "page errors: none" for phone, short phone and desktop. Look at the screenshots for layout changes.
 3. For balance changes: `python tools/sim.py 2` (simulated hours). Rough current baseline with the bot:
-   first run reaches about world 9, best world around 15 to 17 after an hour, worlds slow down gradually
+   first run reaches about world 9, best world around 14 after an hour and 16 after 4 hours (Potent and Rich genome
+   reach about 17 after an hour and 25 after 4 hours: their levels cost 40% more each), worlds slow down gradually
    (seconds early, minutes near the end of a run). The bot is a weak player, so a human should beat these.
    `python tools/playstyles.py 20` checks fresh runs: anyone who buys upgrades should clear world 1
    (currently 238 of 240) in about 2.5 to 3.5 minutes; never buying never clears it.

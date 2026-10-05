@@ -1036,9 +1036,11 @@ const roman = n => ["", "I", "II", "III", "IV", "V"][n] || String(n);
 const cardLevelsText = (kind, k) => cardDef(kind, k).v.map((v, i) => "Level " + roman(i + 1) + ": " + cardDef(kind, k).desc(v)).join(". ") + ".";
 
 // permanent upgrades (DNA)
+// Potent and Rich genome have no cap; each level costs 40% more than the last, so high levels (about 25)
+// take hours of play to earn. Being very strong there is fine: it was worked for.
 const PERM = {
-  potency:  { name: "Potent genome", text: "Damage on every run", base: 5, g: 1.28, max: 999, eff: l => "×" + fmt(Math.pow(1.2, l)) },
-  yield:    { name: "Rich genome", text: "Lifeforce on every run. Upgrades with a level cap cost the same amount more, so this mostly speeds up Virulence, Siphon and mutations", base: 5, g: 1.28, max: 999, eff: l => "×" + fmt(Math.pow(1.2, l)) },
+  potency:  { name: "Potent genome", text: "Damage on every run", base: 5, g: 1.4, max: 999, eff: l => "×" + fmt(Math.pow(1.2, l)) },
+  yield:    { name: "Rich genome", text: "Lifeforce on every run. Upgrades with a level cap cost the same amount more, so this mostly speeds up Virulence, Siphon and mutations", base: 5, g: 1.4, max: 999, eff: l => "×" + fmt(Math.pow(1.2, l)) },
   headstart:{ name: "Head start", text: "Lifeforce you start each run with", base: 10, g: 1.8, max: 15, eff: l => fmt(headStartLf(l)) },
   incubate: { name: "Incubation", text: "Extra stacks on each virus you place", base: 15, g: 2.2, max: 4, eff: l => "+" + l },
   cure:     { needsBoss: 2, name: "Hidden genome", text: "More time before each world's cure lands", base: 12, g: 1.9, max: 10, eff: l => "+" + (10 * l) + "%" },
