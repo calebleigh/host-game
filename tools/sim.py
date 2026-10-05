@@ -8,7 +8,8 @@ Reads:  www/index.html (uses the window.__host test hooks at the bottom of the g
 import asyncio, sys, pathlib
 from playwright.async_api import async_playwright
 
-PAGE = (pathlib.Path(__file__).resolve().parent.parent / "www" / "index.html").as_uri()
+# HOST_PAGE can point at a variant copy of the game to compare balance ideas before changing the real file
+PAGE = pathlib.Path(__import__("os").environ.get("HOST_PAGE") or pathlib.Path(__file__).resolve().parent.parent / "www" / "index.html").resolve().as_uri()
 BOT = """
 (hours) => {
   const H = window.__host; const G = H.G;

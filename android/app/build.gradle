@@ -7,13 +7,26 @@ android {
         applicationId "com.hostgame.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // GitHub Actions passes the build number, so every build is a newer version than the last
+        versionCode((System.getenv("HOST_BUILD") ?: "1").toInteger())
+        versionName "1." + (System.getenv("HOST_BUILD") ?: "0")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    // Every published APK must be signed with the same key, or Android refuses to update the installed app.
+    // GitHub Actions provides the permanent key (from repo secrets); local builds keep the normal debug key.
+    signingConfigs {
+        debug {
+            if (System.getenv("HOST_KEYSTORE")) {
+                storeFile file(System.getenv("HOST_KEYSTORE"))
+                storePassword System.getenv("HOST_KEYSTORE_PASSWORD")
+                keyAlias "host"
+                keyPassword System.getenv("HOST_KEYSTORE_PASSWORD")
+            }
         }
     }
     buildTypes {

@@ -38,8 +38,19 @@ jobs:
       - name: Copy the game into the Android project
         run: npx cap sync android
 
+      - name: Unpack the signing key (the same key every build, so the app can update in place)
+        env:
+          HOST_KEYSTORE_B64: ${{ secrets.HOST_KEYSTORE_B64 }}
+        run: |
+          test -n "$HOST_KEYSTORE_B64" || { echo "Missing the HOST_KEYSTORE_B64 secret"; exit 1; }
+          echo "$HOST_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/host-upload.jks"
+
       - name: Build the APK
         working-directory: android
+        env:
+          HOST_KEYSTORE: ${{ runner.temp }}/host-upload.jks
+          HOST_KEYSTORE_PASSWORD: ${{ secrets.HOST_KEYSTORE_PASSWORD }}
+          HOST_BUILD: ${{ github.run_number }}
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon

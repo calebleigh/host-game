@@ -16,7 +16,8 @@ Usage:  python tools/playstyles.py [runs per style] [max minutes per run]
 import asyncio, pathlib, sys, statistics, itertools
 from playwright.async_api import async_playwright
 
-PAGE = (pathlib.Path(__file__).resolve().parent.parent / "www" / "index.html").as_uri()
+# HOST_PAGE can point at a variant copy of the game to compare balance ideas before changing the real file
+PAGE = pathlib.Path(__import__("os").environ.get("HOST_PAGE") or pathlib.Path(__file__).resolve().parent.parent / "www" / "index.html").resolve().as_uri()
 RUNS = int(sys.argv[1]) if len(sys.argv) > 1 else 10
 MAX_MIN = float(sys.argv[2]) if len(sys.argv) > 2 else 30
 
