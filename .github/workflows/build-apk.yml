@@ -43,7 +43,7 @@ jobs:
           HOST_KEYSTORE_B64: ${{ secrets.HOST_KEYSTORE_B64 }}
         run: |
           test -n "$HOST_KEYSTORE_B64" || { echo "Missing the HOST_KEYSTORE_B64 secret"; exit 1; }
-          echo "$HOST_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/host-upload.jks"
+          printf %s "$HOST_KEYSTORE_B64" | tr -d '\r\n ' | base64 -d > "$RUNNER_TEMP/host-upload.jks"
 
       - name: Build the APK
         working-directory: android
