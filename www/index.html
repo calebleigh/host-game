@@ -1185,6 +1185,9 @@ function rangePx() { return spacing() * 0.85 * (1 + 0.12 * ulv("reach")) * M.ran
 // how far the virus spreads (bounces and death spread): grows up to 2.5x as the world collapses, so the last
 // scattered survivors can still be reached instead of each needing its own virus
 function spreadRange() { return rangePx() * (1 + 1.5 * collapse()); }
+// range of the hosts' own abilities (healers, The Herbalist, The Doctor): fixed by the map, never boosted by your
+// Reach upgrades or cards (before, buying Reach made healers and The Doctor cover more of the map)
+function hostRange() { return spacing() * 0.85; }
 
 // Slides cut-off groups of hosts toward the rest until every host is within `link` of the main group.
 // Each group moves as a whole, so its own shape stays the same. Deterministic (no randomness).
@@ -1520,14 +1523,14 @@ function step(dt) {
       h.docT += dt;
       if (h.docT >= 8) {
         h.docT = 0;
-        for (const o of nearby(h, rangePx() * 2.2, o => o.inf && !o.dead)) { o.inf = false; o.resist = 1e9; o.flash = now; vs().doctor++; link(h, o); float(o, "cured", "immune"); }
+        for (const o of nearby(h, hostRange() * 2.2, o => o.inf && !o.dead)) { o.inf = false; o.resist = 1e9; o.flash = now; vs().doctor++; link(h, o); float(o, "cured", "immune"); }
       }
     }
     if (h.healer && !h.inf) {
       h.hAcc += dt;
       if (h.hAcc >= 4) {
         h.hAcc = 0;
-        for (const o of nearby(h, rangePx() * (h.healRange || 1), o => o.inf && !o.dead)) {
+        for (const o of nearby(h, hostRange() * (h.healRange || 1), o => o.inf && !o.dead)) {
           o.stacks--; o.hp = Math.min(o.max, o.hp + o.max * 0.05);
           o.flash = now;
           if (o.stacks <= 0 && o.pz) o.stacks = 1;
@@ -2162,7 +2165,7 @@ function draw() {
 
   if (hover && !hover.dead) {
     const [x, y] = hostPos(hover);
-    const rr = (hover.healer ? rangePx() : spreadRange()) * (hover.carrier && !hover.healer ? 1.6 : 1);
+    const rr = (hover.healer ? hostRange() * (hover.healRange || 1) : spreadRange()) * (hover.carrier && !hover.healer ? 1.6 : 1);
     ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2);
     ctx.setLineDash([4, 6]); ctx.strokeStyle = hover.healer ? C.heal : C.stain; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.2; ctx.stroke();
     ctx.setLineDash([]); ctx.globalAlpha = 1;
@@ -2192,7 +2195,7 @@ function draw() {
     if (h.boss !== undefined) {
       // boss: reach ring for the Herbalist and Doctor, a crown ring, and its name
       if (h.boss === 1 || h.boss === 3) {
-        ctx.beginPath(); ctx.arc(x, y, rangePx() * (h.boss === 1 ? h.healRange : 2.2), 0, Math.PI * 2);
+        ctx.beginPath(); ctx.arc(x, y, hostRange() * (h.boss === 1 ? h.healRange : 2.2), 0, Math.PI * 2);
         ctx.setLineDash([2, 6]); ctx.strokeStyle = h.boss === 1 ? C.heal : C.ink; ctx.globalAlpha = 0.35 + (h.boss === 3 ? 0.4 * (h.docT / 8) : 0);
         ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
       }
