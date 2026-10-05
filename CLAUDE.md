@@ -194,7 +194,7 @@ Virulence has `k: 0.02`, Siphon `k: 0.03`. Change one knob at a time and re-run 
   `load()` and `newMeta()`. One-time migrations use flags on G (example: `colorsV2`).
 - `silent` mode (offline catch-up and the simulator) must skip all DOM work and floats.
 - Hidden tabs pause requestAnimationFrame; returning triggers `catchUp()`.
-- The Android WebView reports the camera cutout as a top inset even in immersive mode.
+- The Android WebView reports the camera cutout as a top inset even in immersive mode. MainActivity sets the\n  cutout mode to ALWAYS / SHORT_EDGES so the app draws beside the camera (otherwise the Fold's cover screen in\n  portrait shows a black strip at the top), and the HUD sits just under the cutout (max(14px, 4px + --sat)).
 
 ## Open ideas (not started, check with Caleb first)
 
