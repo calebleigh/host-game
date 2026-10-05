@@ -1050,7 +1050,7 @@ const cardLevelsText = (kind, k) => cardDef(kind, k).v.map((v, i) => "Level " + 
 // take hours of play to earn. Being very strong there is fine: it was worked for.
 const PERM = {
   potency:  { name: "Potent genome", text: "Damage on every run", base: 5, g: 1.4, max: 999, eff: l => "×" + fmt(Math.pow(1.2, l)) },
-  yield:    { name: "Rich genome", text: "Lifeforce on every run. Upgrades with a level cap cost the same amount more, so this mostly speeds up Virulence, Siphon and mutations", base: 5, g: 1.4, max: 999, eff: l => "×" + fmt(Math.pow(1.2, l)) },
+  yield:    { name: "Rich genome", text: "Virulence, Siphon and mutations cost less on every run", base: 5, g: 1.4, max: 999, eff: l => l ? "prices ÷" + fmt(Math.pow(1.2, l)) : "full price" },
   headstart:{ name: "Head start", text: "Lifeforce you start each run with", base: 10, g: 1.8, max: 15, eff: l => fmt(headStartLf(l)) },
   incubate: { name: "Incubation", text: "Extra stacks on each virus you place", base: 15, g: 2.2, max: 4, eff: l => "+" + l },
   cure:     { needsBoss: 2, name: "Hidden genome", text: "More time before each level's cure lands", base: 12, g: 1.9, max: 10, eff: l => "+" + (10 * l) + "%" },
@@ -1072,7 +1072,8 @@ const DEFAULT_SETTINGS = { main: "#D6336C", accent: "#6A2FA0", theme: "system", 
 const BOON_TAGS = { longreach: "spread", twin: "spread", bloom: "spread", frenzy: "spread", virulent: "damage", hotstart: "damage", mutagen: "damage",
   richblood: "lifeforce", feast: "lifeforce", windfall: "lifeforce", spare: "survival", slippery: "survival", masked: "survival" };
 const MAP_CURSES = ["vaccinated", "healers", "sentinels", "scattered"], IMMUNE_CURSES = ["vigilant", "fever", "rushed", "alarm"];
-function headStartLf(l) { return l ? 60 * l * Math.pow(1.5, l) : 0; }
+// starting lifeforce from Head start, in the same small numbers as level 1 prices
+function headStartLf(l) { return l ? 30 * l * Math.pow(1.1, l) : 0; }
 
 // ================= state =================
 // G = permanent meta, R = current run
@@ -1082,7 +1083,7 @@ function newMeta() {
   const p = {}; for (const k in PERM) p[k] = 0;
   const a = {}; for (const k in AUTO) a[k] = { owned: false, on: true };
   return { dna: 0, dnaTotal: 0, best: 1, runs: 0, p, auto: a, settings: Object.assign({}, DEFAULT_SETTINGS), savedAt: Date.now(),
-    bosses: {}, wins: 0, ascMax: 0, asc: 0, colorsV2: true, upStep2: true, seen: { hosts: {}, bosses: {}, boons: {}, curses: {}, muts: {} } };
+    bosses: {}, wins: 0, ascMax: 0, asc: 0, colorsV2: true, upStep2: true, econV2: true, seen: { hosts: {}, bosses: {}, boons: {}, curses: {}, muts: {} } };
 }
 function newRun() {
   const lv = {}; for (const k in UP) lv[k] = 0;
@@ -1440,7 +1441,9 @@ function rampMult(t) { const l = ulv("wither"); return l ? 1 + Math.min(0.04 * l
 // world 1 is the tutorial: its cure takes half again as long (180s instead of 120s)
 const cureTime = () => CURE_BASE * (R.world === 1 ? 1.5 : 1) * M.cure * (1 + 0.1 * G.p.cure) * Math.pow(0.92, R.asc || 0) / lateGrowth(R.world, CURE_SHRINK, 1.02);
 const dnaMult = () => 1 + 0.35 * (R.asc || 0);
-const lfMult = () => YIELD * Math.pow(1.2, ulv("siphon")) * permLf() * M.lf;
+// Lifeforce per point of damage. Divided by the level's health scale so lifeforce and prices stay in small numbers
+// on every level (prices don't grow per level either): the same buying power as before, without the millions.
+const lfMult = () => YIELD * Math.pow(1.2, ulv("siphon")) * M.lf / worldScale(R.world);
 const dmgMult = () => 0.5 * Math.pow(1.3, ulv("virulence")) * permDmg() * M.dmg;
 const canInfect = h => !h.dead && !h.inf && !h.vacc && !h.sentinel && h.resist <= 0;
 const canPlace = h => !h.dead && !h.inf && !h.vacc && !h.sentinel;
@@ -1910,9 +1913,9 @@ cv.addEventListener("pointerdown", e => {
 let tab = "potency";
 function upCost(def, l) { return def.base * Math.pow(def.g, l) * Math.pow(1 + (def.k || 0), l * l); }
 // run upgrades get pricier each world, so lifeforce from easy worlds can't buy out the whole tree
-// Capped upgrades also cost more in step with Rich genome, so a big lifeforce boost can't max them all
-// early in every run. Uncapped ones (Virulence, Siphon) and mutations keep the full benefit.
-function runCost(def, l) { return upCost(def, l) * worldScale(R.world) * (def.capped ? permLf() : 1); }
+// Run upgrade prices. Rich genome makes the uncapped ones (Virulence, Siphon) and mutations cheaper; capped
+// upgrades aren't affected, so a strong genome can't max them all early in every run.
+function runCost(def, l) { return upCost(def, l) / (def.capped ? 1 : permLf()); }
 function renderTabs() {
   const el = $("tabs"); el.innerHTML = "";
   for (const t of TREES) {
@@ -2368,6 +2371,8 @@ function load() {
     for (const h of R.hosts) if (h.type === "carrier") { h.type = "common"; h.carrier = true; }
     for (const k in UP) if (typeof R.lv[k] !== "number") R.lv[k] = 0;
     // upgrade levels became twice as strong: a run saved before that keeps about the same strength
+    // lifeforce stopped growing per level and with Rich genome: convert a saved run's lifeforce to the new scale
+    if (!G.econV2) { if (typeof R.lf === "number" && R.world) R.lf = R.lf / (worldScale(R.world) * permLf()); G.econV2 = true; }
     if (!G.upStep2) { for (const k in UP) R.lv[k] = Math.min(UP[k].max, Math.ceil(R.lv[k] / UP_STEP)); G.upStep2 = true; }
     for (const k in MUT) if (typeof R.mu[k] !== "number") R.mu[k] = 0;
     recomputeMods();

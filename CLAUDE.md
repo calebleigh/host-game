@@ -130,12 +130,13 @@ Phases (`R.phase`): `idle` (no run), `start` (opening card pick), `pick` (place 
   panel (`renderRun`): run summary, then each boon and curse with its icon (`CARD_ICONS`), level, effect and next level.
 
 Current tuning constants (top of the script): `worldHp = 180 * worldScale(w)` where `worldScale` grows x2.6 per
-world up to world 10 (`HP_GROWTH`) and x2.0 after (`HP_GROWTH_LATE`); run upgrade prices use the same `worldScale`,
-so lifeforce keeps its value. After world 10 the immune system and cure also scale gently (`lateGrowth`):
+world up to world 10 (`HP_GROWTH`) and x2.0 after (`HP_GROWTH_LATE`); lifeforce and prices do NOT grow per level:
+income per point of damage is divided by `worldScale` (`lfMult`), so the numbers a player sees stay small (level 8
+prices in the tens of thousands, level 20 around a million). After world 10 the immune system and cure also scale gently (`lateGrowth`):
 cleansing x1.10 per world instead of x1.25, learning x1.03 instead of x1.08, healing x1.04, cure x1.02. `CURE_BASE 120`, `CURE_SHRINK 1.05`,
 `DNA_GROWTH 1.45`, `YIELD 0.3`, cleanse `0.05 * 1.25^(w-1)`, alert push ramps from 1x in
-world 1 to 3x by world 10. Run upgrades with a level cap get `k: 0.015` (top levels climb steeply, maxing is a late goal) and
-their prices are also multiplied by the Rich genome boost (`permLf`), so DNA can't make them trivial;
+world 1 to 3x by world 10. Run upgrades with a level cap get `k: 0.015` (top levels climb steeply, maxing is a late goal). Rich genome
+(`permLf`) divides the prices of uncapped upgrades (Virulence, Siphon) and mutations, and doesn't touch capped ones;
 Virulence has `k: 0.02`, Siphon `k: 0.03`. Change one knob at a time and re-run `tools/sim.py`.
 
 ## Design rules Caleb has set (keep these unless he changes them)
