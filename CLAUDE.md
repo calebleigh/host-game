@@ -56,8 +56,10 @@ In a plain browser the placeholders stay, and update checks are skipped ("Web ve
 2. `python tools/smoke.py` (needs `pip install playwright` and `python -m playwright install chromium`).
    It must print "page errors: none" for phone, short phone and desktop. Look at the screenshots for layout changes.
 3. For balance changes: `python tools/sim.py 2` (simulated hours). Rough current baseline with the bot:
-   first run reaches about world 9, best world around 14 after an hour and 16 after 4 hours (Potent and Rich genome
-   reach about 17 after an hour and 25 after 4 hours: their levels cost 40% more each), worlds slow down gradually
+   first run reaches about world 9, best world around 14 after an hour; world 20 after about 3.5 hours, world 25
+   after about 28 hours, and the first win (beating Patient Omega) somewhere past 45 hours (target: 2 to 3 days of
+   good play). Potent and Rich genome reach about 17 after an hour (their levels cost 40% more each). The longest
+   stretches are the boss worlds 20 (The Doctor) and 25 (Patient Omega). `tools/towin.py` measures this. Worlds slow down gradually
    (seconds early, minutes near the end of a run). The bot is a weak player, so a human should beat these.
    `python tools/playstyles.py 20` checks fresh runs: anyone who buys upgrades should clear world 1
    (currently 238 of 240) in about 2.5 to 3.5 minutes; never buying never clears it.
@@ -124,8 +126,10 @@ Phases (`R.phase`): `idle` (no run), `start` (opening card pick), `pick` (place 
   offered again. Owned cards are listed in the Run tab of the upgrade
   panel (`renderRun`): run summary, then each boon and curse with its icon (`CARD_ICONS`), level, effect and next level.
 
-Current tuning constants (top of the script): `worldHp = 180 * 2.6^(w-1)`, `CURE_BASE 120`, `CURE_SHRINK 1.05`,
-`COST_GROWTH 2.6` (matches host health growth, so lifeforce never gets relatively cheaper), `DNA_GROWTH 1.45`, `YIELD 0.3`, cleanse `0.05 * 1.25^(w-1)`, alert push ramps from 1x in
+Current tuning constants (top of the script): `worldHp = 180 * worldScale(w)` where `worldScale` grows x2.6 per
+world up to world 10 (`HP_GROWTH`) and x1.8 after (`HP_GROWTH_LATE`); run upgrade prices use the same `worldScale`,
+so lifeforce keeps its value. `CURE_BASE 120`, `CURE_SHRINK 1.05`,
+`DNA_GROWTH 1.45`, `YIELD 0.3`, cleanse `0.05 * 1.25^(w-1)`, alert push ramps from 1x in
 world 1 to 3x by world 10. Run upgrades with a level cap get `k: 0.015` (top levels climb steeply, maxing is a late goal) and
 their prices are also multiplied by the Rich genome boost (`permLf`), so DNA can't make them trivial;
 Virulence has `k: 0.02`, Siphon `k: 0.03`. Change one knob at a time and re-run `tools/sim.py`.

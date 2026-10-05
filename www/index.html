@@ -908,8 +908,12 @@ const TYPES = {
 const SHED_STACKS = 3;
 const YIELD = 0.3;
 const BASE_LIVES = 3;
-const worldHp = w => 180 * Math.pow(2.6, w - 1);
-const CURE_BASE = 120, CURE_SHRINK = 1.05, COST_GROWTH = 2.6, DNA_GROWTH = 1.45;
+// Host health per world: x2.6 per world up to world 10, then x1.8 per world, so the late game slows down instead of
+// becoming unwinnable (target: a first win after about 2 to 3 days of good play). Upgrade prices follow the same scale.
+const HP_GROWTH = 2.6, HP_GROWTH_LATE = 1.8, LATE_FROM = 10;
+const worldScale = w => Math.pow(HP_GROWTH, Math.min(w, LATE_FROM) - 1) * Math.pow(HP_GROWTH_LATE, Math.max(0, w - LATE_FROM));
+const worldHp = w => 180 * worldScale(w);
+const CURE_BASE = 120, CURE_SHRINK = 1.05, DNA_GROWTH = 1.45;
 
 const TREES = [
   { id: "potency", name: "Potency" },
@@ -1896,7 +1900,7 @@ function upCost(def, l) { return def.base * Math.pow(def.g, l) * Math.pow(1 + (d
 // run upgrades get pricier each world, so lifeforce from easy worlds can't buy out the whole tree
 // Capped upgrades also cost more in step with Rich genome, so a big lifeforce boost can't max them all
 // early in every run. Uncapped ones (Virulence, Siphon) and mutations keep the full benefit.
-function runCost(def, l) { return upCost(def, l) * Math.pow(COST_GROWTH, R.world - 1) * (def.capped ? permLf() : 1); }
+function runCost(def, l) { return upCost(def, l) * worldScale(R.world) * (def.capped ? permLf() : 1); }
 function renderTabs() {
   const el = $("tabs"); el.innerHTML = "";
   for (const t of TREES) {
