@@ -898,7 +898,7 @@ const ZONES = [
   { name: "Village", boss: "The Herbalist", bossText: "A giant healer whose reach covers a huge part of the map. Infecting it stops the healing.", hp: 12, reward: "Unlocks Second look in Evolve" },
   { name: "Town", boss: "The Quarantine", bossText: "Can't be infected until 40% of the town has fallen.", hp: 14, reward: "Unlocks Hidden genome in Evolve" },
   { name: "City", boss: "The Doctor", bossText: "Every 12 seconds, cures every infection close to it. It never cures itself.", hp: 12, reward: "Adds two new boons to the card pool" },
-  { name: "Planet", boss: "Patient Omega", bossText: "The last host. Enormous, and its immune system learns 50% faster.", hp: 16, reward: "Victory, and Ascension unlocks" }
+  { name: "Planet", boss: "Patient Omega", bossText: "The last host. Enormous, and its immune system learns 25% faster.", hp: 12, reward: "Victory, and Ascension unlocks" }
 ];
 const zoneOf = w => Math.min(ZONES.length - 1, Math.floor((w - 1) / ZONE_SIZE));
 const isBossWorld = w => w % ZONE_SIZE === 0;
@@ -1196,7 +1196,7 @@ function spreadRange() { return rangePx() * (1 + 1.5 * collapse()); }
 // Reach upgrades or cards (before, buying Reach made healers and The Doctor cover more of the map)
 function hostRange() { return spacing() * 0.85; }
 // The Doctor cures every infection within DOCTOR_RANGE x hostRange every DOCTOR_EVERY seconds; Patient Omega learns OMEGA_LEARN x as fast
-const DOCTOR_EVERY = 12, DOCTOR_RANGE = 1.7, OMEGA_LEARN = 1.5;
+const DOCTOR_EVERY = 12, DOCTOR_RANGE = 1.7, OMEGA_LEARN = 1.25;
 
 // Slides cut-off groups of hosts toward the rest until every host is within `link` of the main group.
 // Each group moves as a whole, so its own shape stays the same. Deterministic (no randomness).
