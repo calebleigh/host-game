@@ -39,6 +39,10 @@ Node 22, JDK 21 (Temurin), `android-actions/setup-android@v3` with explicit
 Then `npm ci`, a `sed` step that stamps `__HOST_BUILD__` (run number) and `__HOST_REPO__` (owner/repo) into
 `www/index.html`, `npx cap sync android`, `./gradlew assembleDebug`, and `softprops/action-gh-release`
 publishes tag `build-<run_number>` with `Host.apk`. It's a debug build; that's fine for sideloading.
+**Signing:** every APK is signed with one permanent key (repo secrets `HOST_KEYSTORE_B64` and
+`HOST_KEYSTORE_PASSWORD`, alias `host`; Caleb's backup is in `%USERPROFILE%\host-signing`). Without it each build
+got a random debug key and Android refused to update over the installed app. `versionCode` = the run number
+(`HOST_BUILD`). Never change or lose the key, or every install has to be uninstalled again.
 
 **Never replace the `__HOST_BUILD__` / `__HOST_REPO__` placeholders in the committed file.** The workflow
 stamps them only in the build copy. The in-app update check compares the latest release tag's number against
