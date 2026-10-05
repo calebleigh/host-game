@@ -98,6 +98,9 @@ Phases (`R.phase`): `idle` (no run), `start` (opening card pick), `pick` (place 
   A host that loses every stack has "fought it off" (teal ring + shield) and can't catch that virus again,
   except patient zero (the host you placed on, `h.pz`): it can be worn down to 1 stack but never fights it off.
   The cure timer wipes the current virus when it lands (120s base, shrinking each world).
+- World collapse (`collapse()`): from 60% of a world's hosts dead, rising to full at 90%, the survivors (bosses
+  too) cleanse up to 80% less, stop healing and take up to twice as long to learn the virus. Without it the last
+  lone hosts were unkillable and runs hit a wall. Tune with `COLLAPSE_FROM` / `COLLAPSE_FULL`.
 - Lifeforce = damage dealt; spent on run upgrades (Potency, Spread, Parasite, Evasion, Mutations).
   Upgrade costs scale up each world. Upgrades go high (most to 30 to 50 levels) with steep prices, so a run
   never buys everything; only Split (10), Linger (6) and Tempo (25) stay low because their effect breaks past that.

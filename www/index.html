@@ -1395,9 +1395,14 @@ const killedCount = () => R.hosts.reduce((n, h) => n + (h.dead ? 1 : 0), 0);
 const alertLevel = () => Math.min(1, M.alert * killedCount() / Math.max(1, required().length));
 // how hard the immune alert pushes back as you kill: gentle in world 1, full strength by world 10
 const alertPush = () => 1 + 2 * Math.min(1, (R.world - 1) / 9);
-function cleanseBase() { return 0.05 * Math.pow(1.25, R.world - 1) * Math.pow(0.88, R.lv.stealth) * (1 + alertPush() * alertLevel()); }
-const adaptTime = () => 12 * (1 + 0.15 * R.lv.shapeshift) * M.adapt / Math.pow(1.08, R.world - 1);
-const regenRate = () => 0.008 * Math.pow(1.1, R.world - 1) * Math.pow(0.85, R.lv.suppress) * M.regen;
+// World collapse: once most of a world's hosts are dead, the survivors weaken. It starts at 60% dead and is full
+// at 90%: up to 80% less cleansing, no healing, and twice as long to learn the virus. So the end of a world speeds
+// up instead of grinding to a halt on a few lone hosts (bosses included).
+const COLLAPSE_FROM = 0.6, COLLAPSE_FULL = 0.9;
+const collapse = () => { const n = required().length; return n ? Math.max(0, Math.min(1, (killedCount() / n - COLLAPSE_FROM) / (COLLAPSE_FULL - COLLAPSE_FROM))) : 0; };
+function cleanseBase() { return 0.05 * Math.pow(1.25, R.world - 1) * Math.pow(0.88, R.lv.stealth) * (1 + alertPush() * alertLevel()) * (1 - 0.8 * collapse()); }
+const adaptTime = () => 12 * (1 + 0.15 * R.lv.shapeshift) * M.adapt / Math.pow(1.08, R.world - 1) * (1 + collapse());
+const regenRate = () => 0.008 * Math.pow(1.1, R.world - 1) * Math.pow(0.85, R.lv.suppress) * M.regen * (1 - collapse());
 function rampMult(t) { const l = R.lv.wither; return l ? 1 + Math.min(0.04 * l * t, l) : 1; }
 const cureTime = () => CURE_BASE * M.cure * (1 + 0.1 * G.p.cure) * Math.pow(0.92, R.asc || 0) / Math.pow(CURE_SHRINK, R.world - 1);
 const dnaMult = () => 1 + 0.35 * (R.asc || 0);
@@ -1475,6 +1480,10 @@ function damageHost(h, raw) {
 }
 function step(dt) {
   if (R.phase !== "run") return;
+  if (!silent && R.collapseWorld !== R.world && collapse() > 0) {
+    R.collapseWorld = R.world;
+    toast("Most hosts are dead, so the survivors are collapsing: they fight back and heal less and less.", 5000);
+  }
   const cap = stackCap(), ti = tickInt(), si = stackInt(), rg = regenRate();
   const cb = cleanseBase(), ad = adaptTime(), dm = dmgMult();
   const bcd = bounceCd(R.lv.bounce);
@@ -2079,7 +2088,8 @@ function updateHud() {
   $("rate").textContent = fmt(rateWindow.reduce((s, e) => s + e[1], 0) / 3);
   const req = required();
   $("hostsLeft").textContent = req.filter(h => !h.dead).length + " / " + req.length;
-  $("alert").textContent = pct(alertLevel());
+  const col = collapse();
+  $("alert").textContent = pct(alertLevel()) + (col > 0 && R.phase === "run" ? ", collapsing" : "");
   $("cure").textContent = R.phase === "run" ? pct(Math.min(1, R.cure)) + " (" + Math.max(0, Math.ceil((1 - R.cure) * cureTime())) + " days)" : "waiting";
   const ml = maxLives();
   $("lives").textContent = "●".repeat(Math.max(0, R.lives)) + "○".repeat(Math.max(0, ml - R.lives));
@@ -2579,7 +2589,7 @@ const GUIDE = [
   { scene: "death", title: "Death spread",
     text: "Every time a host dies, the virus spreads to its 2 nearest healthy neighbors for free. Contagion adds more. This means a damage-heavy virus can spread without ever jumping." },
   { scene: "immune", title: "The immune system",
-    text: "Infected hosts fight back by <b>removing stacks</b> (a teal flash), faster the longer they're infected and the more hosts you've killed. If a host removes every stack, it <b>fought it off</b>: a teal ring and shield mark it, and it can't catch that virus again. The host you place a virus on can't fight it off, so every virus gets at least one kill. Stealth, Shapeshift and Suppress weaken the immune system." },
+    text: "Infected hosts fight back by <b>removing stacks</b> (a teal flash), faster the longer they're infected and the more hosts you've killed. If a host removes every stack, it <b>fought it off</b>: a teal ring and shield mark it, and it can't catch that virus again. The host you place a virus on can't fight it off, so every virus gets at least one kill. Stealth, Shapeshift and Suppress weaken the immune system. Once most hosts in a world are dead, the survivors <b>collapse</b>: from 60% dead they fight back and heal less and less, and by 90% they barely resist." },
   { scene: "cure", title: "The cure and your viruses",
     text: "Each world races to a cure. When the timer runs out, your current virus is wiped out. You get 3 viruses per world, and dead hosts stay dead between them, so each new virus picks up where the last one stopped. Lose them all and the run ends. When a virus dies, a message tells you why." },
   { scene: "special", title: "Special hosts",
