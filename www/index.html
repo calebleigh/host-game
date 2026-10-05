@@ -894,8 +894,8 @@ const ZONES = [
   { name: "Petri Dish", boss: "Colony Prime", bossText: "A giant colony. It regrows three times as fast while infected.", hp: 10, reward: "Unlocks Spare virus in Evolve" },
   { name: "Village", boss: "The Herbalist", bossText: "A giant healer whose reach covers a huge part of the map. Infecting it stops the healing.", hp: 12, reward: "Unlocks Second look in Evolve" },
   { name: "Town", boss: "The Quarantine", bossText: "Can't be infected until 40% of the town has fallen.", hp: 14, reward: "Unlocks Hidden genome in Evolve" },
-  { name: "City", boss: "The Doctor", bossText: "Every 8 seconds, cures every infection close to it. It never cures itself.", hp: 16, reward: "Adds two new boons to the card pool" },
-  { name: "Planet", boss: "Patient Omega", bossText: "The last host. Enormous, and its immune system learns twice as fast.", hp: 24, reward: "Victory, and Ascension unlocks" }
+  { name: "City", boss: "The Doctor", bossText: "Every 12 seconds, cures every infection close to it. It never cures itself.", hp: 12, reward: "Adds two new boons to the card pool" },
+  { name: "Planet", boss: "Patient Omega", bossText: "The last host. Enormous, and its immune system learns 50% faster.", hp: 16, reward: "Victory, and Ascension unlocks" }
 ];
 const zoneOf = w => Math.min(ZONES.length - 1, Math.floor((w - 1) / ZONE_SIZE));
 const isBossWorld = w => w % ZONE_SIZE === 0;
@@ -908,10 +908,13 @@ const TYPES = {
 const SHED_STACKS = 3;
 const YIELD = 0.3;
 const BASE_LIVES = 3;
-// Host health per world: x2.6 per world up to world 10, then x1.8 per world, so the late game slows down instead of
-// becoming unwinnable (target: a first win after about 2 to 3 days of good play). Upgrade prices follow the same scale.
-const HP_GROWTH = 2.6, HP_GROWTH_LATE = 1.8, LATE_FROM = 10;
-const worldScale = w => Math.pow(HP_GROWTH, Math.min(w, LATE_FROM) - 1) * Math.pow(HP_GROWTH_LATE, Math.max(0, w - LATE_FROM));
+// Host health per world: x2.6 per world up to world 10, then x2.1 per world, so the late game slows down steadily
+// instead of becoming unwinnable (target: a first win after about 2 to 3 days of good play). Upgrade prices follow the
+// same scale. The immune system and the cure also scale more gently after world 10 (see cleanseBase and friends).
+const HP_GROWTH = 2.6, HP_GROWTH_LATE = 2.1, LATE_FROM = 10;
+// grows by `early` per world up to LATE_FROM, then by `late` per world
+const lateGrowth = (w, early, late) => Math.pow(early, Math.min(w, LATE_FROM) - 1) * Math.pow(late, Math.max(0, w - LATE_FROM));
+const worldScale = w => lateGrowth(w, HP_GROWTH, HP_GROWTH_LATE);
 const worldHp = w => 180 * worldScale(w);
 const CURE_BASE = 120, CURE_SHRINK = 1.05, DNA_GROWTH = 1.45;
 
@@ -1188,6 +1191,8 @@ function spreadRange() { return rangePx() * (1 + 1.5 * collapse()); }
 // range of the hosts' own abilities (healers, The Herbalist, The Doctor): fixed by the map, never boosted by your
 // Reach upgrades or cards (before, buying Reach made healers and The Doctor cover more of the map)
 function hostRange() { return spacing() * 0.85; }
+// The Doctor cures every infection within DOCTOR_RANGE x hostRange every DOCTOR_EVERY seconds; Patient Omega learns OMEGA_LEARN x as fast
+const DOCTOR_EVERY = 12, DOCTOR_RANGE = 1.7, OMEGA_LEARN = 1.5;
 
 // Slides cut-off groups of hosts toward the rest until every host is within `link` of the main group.
 // Each group moves as a whole, so its own shape stays the same. Deterministic (no randomness).
@@ -1425,12 +1430,12 @@ const alertPush = () => 1 + 2 * Math.min(1, (R.world - 1) / 9);
 // up instead of grinding to a halt on a few lone hosts (bosses included).
 const COLLAPSE_FROM = 0.6, COLLAPSE_FULL = 0.9;
 const collapse = () => { const n = required().length; return n ? Math.max(0, Math.min(1, (killedCount() / n - COLLAPSE_FROM) / (COLLAPSE_FULL - COLLAPSE_FROM))) : 0; };
-function cleanseBase() { return 0.05 * Math.pow(1.25, R.world - 1) * Math.pow(0.88, ulv("stealth")) * (1 + alertPush() * alertLevel()) * (1 - 0.8 * collapse()); }
-const adaptTime = () => 12 * (1 + 0.15 * ulv("shapeshift")) * M.adapt / Math.pow(1.08, R.world - 1) * (1 + collapse());
-const regenRate = () => 0.008 * Math.pow(1.1, R.world - 1) * Math.pow(0.85, ulv("suppress")) * M.regen * (1 - collapse());
+function cleanseBase() { return 0.05 * lateGrowth(R.world, 1.25, 1.10) * Math.pow(0.88, ulv("stealth")) * (1 + alertPush() * alertLevel()) * (1 - 0.8 * collapse()); }
+const adaptTime = () => 12 * (1 + 0.15 * ulv("shapeshift")) * M.adapt / lateGrowth(R.world, 1.08, 1.03) * (1 + collapse());
+const regenRate = () => 0.008 * lateGrowth(R.world, 1.1, 1.04) * Math.pow(0.85, ulv("suppress")) * M.regen * (1 - collapse());
 function rampMult(t) { const l = ulv("wither"); return l ? 1 + Math.min(0.04 * l * t, l) : 1; }
 // world 1 is the tutorial: its cure takes half again as long (180s instead of 120s)
-const cureTime = () => CURE_BASE * (R.world === 1 ? 1.5 : 1) * M.cure * (1 + 0.1 * G.p.cure) * Math.pow(0.92, R.asc || 0) / Math.pow(CURE_SHRINK, R.world - 1);
+const cureTime = () => CURE_BASE * (R.world === 1 ? 1.5 : 1) * M.cure * (1 + 0.1 * G.p.cure) * Math.pow(0.92, R.asc || 0) / lateGrowth(R.world, CURE_SHRINK, 1.02);
 const dnaMult = () => 1 + 0.35 * (R.asc || 0);
 const lfMult = () => YIELD * Math.pow(1.2, ulv("siphon")) * permLf() * M.lf;
 const dmgMult = () => 0.5 * Math.pow(1.3, ulv("virulence")) * permDmg() * M.dmg;
@@ -1521,9 +1526,9 @@ function step(dt) {
     }
     if (h.boss === 3) {
       h.docT += dt;
-      if (h.docT >= 8) {
+      if (h.docT >= DOCTOR_EVERY) {
         h.docT = 0;
-        for (const o of nearby(h, hostRange() * 2.2, o => o.inf && !o.dead)) { o.inf = false; o.resist = 1e9; o.flash = now; vs().doctor++; link(h, o); float(o, "cured", "immune"); }
+        for (const o of nearby(h, hostRange() * DOCTOR_RANGE, o => o.inf && !o.dead)) { o.inf = false; o.resist = 1e9; o.flash = now; vs().doctor++; link(h, o); float(o, "cured", "immune"); }
       }
     }
     if (h.healer && !h.inf) {
@@ -1545,7 +1550,7 @@ function step(dt) {
     while (h.tick >= ti && h.inf && !h.dead) { h.tick -= ti; damageHost(h, dm * h.stacks * rampMult(h.t)); }
     if (h.dead || !h.inf) continue;
     h.hp = Math.min(h.max, h.hp + rg * (h.boss === 0 ? 3 : 1) * h.max * dt);
-    if (h.t > 4 && Math.random() < cb * (1 + h.t / (h.boss === 4 ? ad / 2 : ad)) * dt) {
+    if (h.t > 4 && Math.random() < cb * (1 + h.t / (h.boss === 4 ? ad / OMEGA_LEARN : ad)) * dt) {
       h.stacks--;
       h.flash = now;
       if (h.stacks <= 0 && h.pz) h.stacks = 1;
@@ -2195,8 +2200,8 @@ function draw() {
     if (h.boss !== undefined) {
       // boss: reach ring for the Herbalist and Doctor, a crown ring, and its name
       if (h.boss === 1 || h.boss === 3) {
-        ctx.beginPath(); ctx.arc(x, y, hostRange() * (h.boss === 1 ? h.healRange : 2.2), 0, Math.PI * 2);
-        ctx.setLineDash([2, 6]); ctx.strokeStyle = h.boss === 1 ? C.heal : C.ink; ctx.globalAlpha = 0.35 + (h.boss === 3 ? 0.4 * (h.docT / 8) : 0);
+        ctx.beginPath(); ctx.arc(x, y, hostRange() * (h.boss === 1 ? h.healRange : DOCTOR_RANGE), 0, Math.PI * 2);
+        ctx.setLineDash([2, 6]); ctx.strokeStyle = h.boss === 1 ? C.heal : C.ink; ctx.globalAlpha = 0.35 + (h.boss === 3 ? 0.4 * (h.docT / DOCTOR_EVERY) : 0);
         ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
       }
       ctx.beginPath(); ctx.arc(x, y, r + 7, 0, Math.PI * 2);

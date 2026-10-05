@@ -56,9 +56,9 @@ In a plain browser the placeholders stay, and update checks are skipped ("Web ve
 2. `python tools/smoke.py` (needs `pip install playwright` and `python -m playwright install chromium`).
    It must print "page errors: none" for phone, short phone and desktop. Look at the screenshots for layout changes.
 3. For balance changes: `python tools/sim.py 2` (simulated hours). Rough current baseline with the bot:
-   first run reaches about world 9, best world around 14 after an hour; world 20 after about 3.5 hours, world 25
-   after about 28 hours, and the first win (beating Patient Omega) somewhere past 45 hours (target: 2 to 3 days of
-   good play). Potent and Rich genome reach about 17 after an hour (their levels cost 40% more each). The longest
+   first run reaches about world 9, best world around 14 after an hour, world 20 after about 4 to 5 hours, then each
+   late world takes a little longer than the last (target: a first win after 2 to 3 days of good play; the bot is
+   weaker than a good player). Potent and Rich genome reach about 17 after an hour (their levels cost 40% more each). The longest
    stretches are the boss worlds 20 (The Doctor) and 25 (Patient Omega). `tools/towin.py` measures this. Worlds slow down gradually
    (seconds early, minutes near the end of a run). The bot is a weak player, so a human should beat these.
    `python tools/playstyles.py 20` checks fresh runs: anyone who buys upgrades should clear world 1
@@ -97,8 +97,8 @@ Phases (`R.phase`): `idle` (no run), `start` (opening card pick), `pick` (place 
 
 - 25 worlds in 5 zones (Petri Dish, Village, Town, City, Planet). **Players see them as levels**: every visible text says\n  "level" ("Level 3 of 25", "Continue to level 4"), while the code keeps world (R.world, worldTitle, class="world"). Every 5th world is a boss world with one
   giant host in the middle that must die: Colony Prime (regrows 3x), The Herbalist (giant healer),
-  The Quarantine (can't be infected until 40% of hosts are dead), The Doctor (cures nearby infections every 8s),
-  Patient Omega (learns twice as fast). First kills unlock Spare virus, Second look, Hidden genome, two new boons,
+  The Quarantine (can't be infected until 40% of hosts are dead), The Doctor (cures nearby infections every 12s),
+  Patient Omega (learns 50% faster). Healer and Doctor ranges use `hostRange()` (fixed by the map), never your Reach. First kills unlock Spare virus, Second look, Hidden genome, two new boons,
   and victory + Ascension (hosts +25% health, cure 8% sooner, +35% DNA per level, up to 10).
 - Each world: 3 viruses (more via perks and boons). Place one, it spreads; if it dies out you place the next.
   Dead hosts stay dead between viruses. Lose all viruses and the run ends.
@@ -127,8 +127,9 @@ Phases (`R.phase`): `idle` (no run), `start` (opening card pick), `pick` (place 
   panel (`renderRun`): run summary, then each boon and curse with its icon (`CARD_ICONS`), level, effect and next level.
 
 Current tuning constants (top of the script): `worldHp = 180 * worldScale(w)` where `worldScale` grows x2.6 per
-world up to world 10 (`HP_GROWTH`) and x1.8 after (`HP_GROWTH_LATE`); run upgrade prices use the same `worldScale`,
-so lifeforce keeps its value. `CURE_BASE 120`, `CURE_SHRINK 1.05`,
+world up to world 10 (`HP_GROWTH`) and x2.1 after (`HP_GROWTH_LATE`); run upgrade prices use the same `worldScale`,
+so lifeforce keeps its value. After world 10 the immune system and cure also scale gently (`lateGrowth`):
+cleansing x1.10 per world instead of x1.25, learning x1.03 instead of x1.08, healing x1.04, cure x1.02. `CURE_BASE 120`, `CURE_SHRINK 1.05`,
 `DNA_GROWTH 1.45`, `YIELD 0.3`, cleanse `0.05 * 1.25^(w-1)`, alert push ramps from 1x in
 world 1 to 3x by world 10. Run upgrades with a level cap get `k: 0.015` (top levels climb steeply, maxing is a late goal) and
 their prices are also multiplied by the Rich genome boost (`permLf`), so DNA can't make them trivial;
